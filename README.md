@@ -1,22 +1,33 @@
 # Responsibilities
 
-A BB plugin for people who run many agent threads at once. It marks the threads that need you, highlights the threads you treat as managers, filters the whole thread list, and adds **New child thread** to the thread actions.
+Find the BB threads that need your attention, including subthreads. Responsibilities marks failures, questions and unread results, and filters the sidebar so you can work through them. It also adds **New child thread** and optional highlighting for threads you list as managers.
 
 ![Responsibilities in BB with synthetic example threads](assets/responsibilities.png)
 
+*Synthetic example data in BB 0.47.1. See [demo provenance](assets/README.md).*
+
 ## Install
 
-Requires BB 0.47.1 or later with its standard sidebar. The plugin uses experimental BB APIs and internal sidebar attributes; a future BB update or a replacement sidebar may affect it.
+Requires BB 0.47.1 / SDK 0.6.79 or later with its standard sidebar. The plugin uses experimental BB APIs and internal sidebar attributes; a future BB update or a replacement sidebar may affect it.
 
 For the published 0.1.0 release:
 
 ```sh
-bb plugin install 'git:https://github.com/neoromantic/bb-plugin-responsibilities.git@semver:^0.1.0' --yes
+bb plugin install npm:bb-plugin-responsibilities@0.1.0 --yes
 ```
 
-To update an existing installation, use `bb plugin update responsibilities`. npm publication is pending.
+For a tracking source, use `bb plugin update responsibilities --yes`. To change a pinned version or source, save the plugin settings, remove its registration, install the desired version, then restore those settings individually. Removal resets settings.
+
+To disable or uninstall, use `bb plugin disable responsibilities` or `bb plugin remove responsibilities`.
 
 The plugin's stable ID is `responsibilities`. No external account or service is needed.
+
+Existing users: [migration reference](https://github.com/neoromantic/bb-plugin-subthread-columns/blob/main/MIGRATION.md).
+
+## Try it
+
+1. Choose **Filter threads → Needs you** in the sidebar footer. Open marked threads to read results or answer questions; their parents stay visible so you keep the context. Choose **All** to restore the full list.
+2. Open a thread’s actions and choose **New child thread** to start a related task under it. Check the composer’s permission mode before sending: it starts with **Full Access** and keeps any choice you make.
 
 ## Marks
 
@@ -56,13 +67,9 @@ Replace the example ID with your own thread ID. This file is optional; leave the
 
 The thread actions get **New child thread**. It opens BB's own composer and files the new thread under the row's thread, in the same environment, section and pin state. The composer starts with Full Access; pick another permission mode before sending if you want one. This is an initial composer value: the selected mode is passed through when you send, without changing existing threads or project defaults.
 
-## Coming from Model & Effort Badges
+## Use with Subthread Columns
 
-Model & Effort Badges (ID `model-effort-badges`; its 0.6.0 package is named Thread Columns) kept the unread and seen records itself through 0.6. On start, Responsibilities copies them from that plugin's database, merging each field by its maximum. The copy is read from a temporary duplicate, so the other plugin's file is never written. Then it reads every thread's history once to find results that finished while neither plugin was listening. Only turns that completed count; an intermediate message of a running, failed or interrupted turn does not. Run only one of the two as the writer: before enabling this one, disable that plugin (`bb plugin disable model-effort-badges`) or move it to a version that no longer keeps these records. Otherwise both draw the same marks. The [badges-only 0.7.0 release](https://github.com/neoromantic/bb-plugin-model-effort-badges/releases/tag/v0.7.0) no longer writes these records.
-
-The old database is not deleted. Back up your BB data before changing plugins. Committed result, quiet-attention and seen fields are retained; unconfirmed client seen marks can be repeated. The records are merged again on every start, so nothing that plugin wrote is skipped. When there is no such database, the log says so and there is nothing to take over.
-
-If you customized the thread list actions, replace only `model-effort-badges/newChildThread` with `responsibilities/newChildThread` in that list, keeping every other action and its order. Use the thread list customization UI; do not replace the whole preferences object. Model badges and columns are separate plugins after the split; save your actual `columns`, `maxColumns` and `placement` before updating the combined 0.6 package and follow [migration](https://github.com/neoromantic/bb-plugin-subthread-columns/blob/main/MIGRATION.md).
+Install [Subthread Columns](https://github.com/neoromantic/bb-plugin-subthread-columns) to answer waiting or failed descendants in one page. Responsibilities also supplies its unread-result columns and shared seen records. Either plugin can be used on its own.
 
 ## For other plugins
 
@@ -73,7 +80,7 @@ Other plugins can read the same records through BB's cross-plugin RPC with `plug
 
 ## Data and access
 
-This is a full-trust BB plugin. It reads thread metadata and thread events. It stores result and seen timestamps in its own local SQLite database. It reads the managers file you configure and, on every start, the database of Model & Effort Badges. No telemetry. It uses BB’s SDK and SQLite driver plus Zod; React and the composer come from BB. Responsibilities makes no external service calls. Sending a child thread uses the provider and account you select in BB, with that provider’s normal access requirements and costs.
+This is a full-trust BB plugin. It reads thread metadata and thread events. It stores result and seen timestamps in its own local SQLite database. It reads the managers file you configure. If an older attention database exists, it imports records from a temporary copy and scans thread history for missed completed results; see the migration reference above. It adds no telemetry or external service calls. BB and your configured providers have their own data handling and telemetry settings. It uses BB’s SDK and SQLite driver plus Zod; React and the composer come from BB. Sending a child thread uses the provider and account you select in BB, with that provider’s normal access requirements and costs.
 
 ## Develop
 
