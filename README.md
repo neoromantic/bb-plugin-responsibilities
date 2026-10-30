@@ -11,10 +11,10 @@ Requires BB 0.47.1 or later with its standard sidebar. The plugin uses experimen
 For the published 0.1.0 release:
 
 ```sh
-bb plugin install npm:bb-plugin-responsibilities@0.1.0 --yes
+bb plugin install 'git:https://github.com/neoromantic/bb-plugin-responsibilities.git@semver:^0.1.0' --yes
 ```
 
-To update an existing installation, use `bb plugin update responsibilities`. The npm command above is a release target until 0.1.0 is published.
+To update an existing installation, use `bb plugin update responsibilities`. npm publication is pending.
 
 The plugin's stable ID is `responsibilities`. No external account or service is needed.
 
@@ -58,11 +58,11 @@ The thread actions get **New child thread**. It opens BB's own composer and file
 
 ## Coming from Model & Effort Badges
 
-Model & Effort Badges (ID `model-effort-badges`; its 0.6.0 package is named Thread Columns) kept the unread and seen records itself through 0.6. On start, Responsibilities copies them from that plugin's database, merging each field by its maximum. The copy is read from a temporary duplicate, so the other plugin's file is never written. Then it reads every thread's history once to find results that finished while neither plugin was listening. Only turns that completed count; an intermediate message of a running, failed or interrupted turn does not. Run only one of the two as the writer: before enabling this one, disable that plugin (`bb plugin disable model-effort-badges`) or move it to a version that no longer keeps these records. Otherwise both draw the same marks. A badges-only version (0.7 or later) no longer writes these records; this is a compatibility boundary, not an announcement of its availability.
+Model & Effort Badges (ID `model-effort-badges`; its 0.6.0 package is named Thread Columns) kept the unread and seen records itself through 0.6. On start, Responsibilities copies them from that plugin's database, merging each field by its maximum. The copy is read from a temporary duplicate, so the other plugin's file is never written. Then it reads every thread's history once to find results that finished while neither plugin was listening. Only turns that completed count; an intermediate message of a running, failed or interrupted turn does not. Run only one of the two as the writer: before enabling this one, disable that plugin (`bb plugin disable model-effort-badges`) or move it to a version that no longer keeps these records. Otherwise both draw the same marks. The [badges-only 0.7.0 release](https://github.com/neoromantic/bb-plugin-model-effort-badges/releases/tag/v0.7.0) no longer writes these records.
 
 The old database is not deleted. Back up your BB data before changing plugins. Committed result, quiet-attention and seen fields are retained; unconfirmed client seen marks can be repeated. The records are merged again on every start, so nothing that plugin wrote is skipped. When there is no such database, the log says so and there is nothing to take over.
 
-If you customized the thread list actions, replace only `model-effort-badges/newChildThread` with `responsibilities/newChildThread` in that list, keeping every other action and its order. Use the thread list customization UI; do not replace the whole preferences object. Model badges and columns are separate plugins after the split; save your actual column settings before updating the combined 0.6 package and consult the replacement plugin’s migration instructions when it is available.
+If you customized the thread list actions, replace only `model-effort-badges/newChildThread` with `responsibilities/newChildThread` in that list, keeping every other action and its order. Use the thread list customization UI; do not replace the whole preferences object. Model badges and columns are separate plugins after the split; save your actual `columns`, `maxColumns` and `placement` before updating the combined 0.6 package and follow [migration](https://github.com/neoromantic/bb-plugin-subthread-columns/blob/main/MIGRATION.md).
 
 ## For other plugins
 
