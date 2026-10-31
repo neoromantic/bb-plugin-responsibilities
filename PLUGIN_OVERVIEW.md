@@ -4,7 +4,7 @@ Find the BB threads that need you: failures, questions and unread results, inclu
 
 ![Responsibilities with the filter menu in BB](assets/responsibilities.png)
 
-*Synthetic example data in BB 0.47.1.*
+*Synthetic example data in BB 0.47.1 with Responsibilities and an optional manager configured. The working spinner is BB’s own.*
 
 Filter by **Working**, **Needs you**, **Quiet** or **Managers**. Manager highlighting is optional and uses your own JSON file. **New child thread** opens BB’s composer under the selected thread with **Full Access** selected initially; it preserves any permission mode you choose before sending.
 

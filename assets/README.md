@@ -1,7 +1,10 @@
-# Synthetic demo
+# Demo provenance
 
-`responsibilities.png` is a crop of BB 0.47.1 running Responsibilities 0.1.0 with the standard sidebar. All thread titles, IDs, project and manager entries are made-up examples. It shows manager highlighting, an active thread, a failure, unread dots and the real Filter threads menu.
+Both PNGs are unmodified screenshots of official BB 0.47.1, captured on 31 October 2026 in an isolated disposable runtime. All titles, messages, states and manager entries are synthetic. No provider credentials or real agent runs were used.
 
-To reproduce in a disposable BB profile, create a parent with child threads representing working, failed and unread-result states. Add the parent ID to your own managers JSON file and select it in Managers file. Open Filter threads in the footer. Capture the sidebar; use synthetic threads, account details and paths. This capture uses dark mode at 1280 × 633 and crops the left 320 × 633 pixels without changing the contents.
+Responsibilities 0.1.0 uses public release commit [`e8ceb793902beae4cc66c4e35e1dae71945dad9b`](https://github.com/neoromantic/bb-plugin-responsibilities/tree/e8ceb793902beae4cc66c4e35e1dae71945dad9b). Subthread Columns 0.1.0 was installed with columns off; Model & Effort Badges and True Colors were absent. Provider icons and the working spinner are BB’s own.
 
-The image contains no other third-party plugin. Provider icons are BB’s standard UI; no provider account or agent execution was used for the example.
+- `responsibilities.png` shows failure/question/unread marks and the real Filter threads menu. The parent Release planning is highlighted through an optional synthetic managers JSON file selected in Managers file.
+- `new-child.png` shows BB’s real composer opened by **New child thread**, with **Full Access** initially selected. Nothing was submitted and no child or provider run was started. A permission mode chosen before sending is preserved.
+
+Dark theme, 1440×900 CSS pixels at 2× scale; both PNGs 2880×1800. No crop, resize or UI redraw.

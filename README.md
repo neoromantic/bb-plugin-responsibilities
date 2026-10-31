@@ -4,7 +4,7 @@ Find the BB threads that need your attention, including subthreads. Responsibili
 
 ![Responsibilities in BB with synthetic example threads](assets/responsibilities.png)
 
-*Synthetic example data in BB 0.47.1. See [demo provenance](assets/README.md).*
+*Synthetic example data in BB 0.47.1 with Responsibilities and an optional manager configured. The working spinner is BB’s own.*
 
 ## Install
 
@@ -67,9 +67,13 @@ Replace the example ID with your own thread ID. This file is optional; leave the
 
 The thread actions get **New child thread**. It opens BB's own composer and files the new thread under the row's thread, in the same environment, section and pin state. The composer starts with Full Access; pick another permission mode before sending if you want one. This is an initial composer value: the selected mode is passed through when you send, without changing existing threads or project defaults.
 
+![New child thread composer with Full Access initially selected](assets/new-child.png)
+
+*Synthetic example in BB 0.47.1: the composer opened by **New child thread**, before sending. Check the permission mode before submitting.*
+
 ## Use with Subthread Columns
 
-Install [Subthread Columns](https://github.com/neoromantic/bb-plugin-subthread-columns) to answer waiting or failed descendants in one page. Responsibilities also supplies its unread-result columns and shared seen records. Either plugin can be used on its own.
+Install [Subthread Columns](https://github.com/neoromantic/bb-plugin-subthread-columns) to answer waiting subthreads or inspect failed descendants in one page. Responsibilities also supplies its unread-result columns and shared seen records. Either plugin can be used on its own.
 
 ## For other plugins
 
