@@ -10,6 +10,8 @@ Find the BB threads that need your attention, including subthreads. Responsibili
 
 Requires BB 0.47.1 / SDK 0.6.79 or later with its standard sidebar. The plugin uses experimental BB APIs and internal sidebar attributes; a future BB update or a replacement sidebar may affect it.
 
+Open BB’s **Community Plugins → Responsibilities → Install**, or run `bb plugin install responsibilities`.
+
 For the published 0.1.0 release:
 
 ```sh
