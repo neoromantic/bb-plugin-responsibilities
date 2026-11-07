@@ -1,6 +1,6 @@
 {
   "name": "bb-plugin-responsibilities",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "type": "module",
   "engines": {
     "bb": ">=0.47.1",
@@ -49,6 +49,7 @@
     "filter.ts",
     "migrate.ts",
     "server.ts",
+    "theme.ts",
     "use-attention.ts",
     "dist/app.js",
     "dist/app.css",
@@ -59,6 +60,8 @@
     "PLUGIN_OVERVIEW.md",
     "LICENSE",
     "assets/responsibilities.png",
+    "assets/compact-theme-dark.png",
+    "assets/compact-theme-light.png",
     "assets/README.md",
     "THIRD_PARTY_NOTICES"
   ]

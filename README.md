@@ -12,10 +12,10 @@ Requires BB 0.47.1 / SDK 0.6.79 or later with its standard sidebar. The plugin u
 
 Open BB’s **Community Plugins → Responsibilities → Install**, or run `bb plugin install responsibilities`.
 
-For the published 0.1.0 release:
+For the published 0.2.0 release:
 
 ```sh
-bb plugin install npm:bb-plugin-responsibilities@0.1.0 --yes
+bb plugin install git:https://github.com/neoromantic/bb-plugin-responsibilities.git@v0.2.0 --yes
 ```
 
 For a tracking source, use `bb plugin update responsibilities --yes`. To change a pinned version or source, save the plugin settings, remove its registration, install the desired version, then restore those settings individually. Removal resets settings.
@@ -39,7 +39,7 @@ On the right of each thread row:
 - an amber ? — it waits for your answer or approval;
 - a dot — it holds a result you have not seen yet, alone or in the corner of BB's own glyph.
 
-A collapsed parent shows the failure and the dot of its hidden descendants.
+A collapsed parent shows the failure and the dot of its hidden descendants. It also shows counts of descendants **↻ working**, **? waiting for your answer or approval**, and **× failed**, including failed queued messages. Zero counts stay hidden. Counts cover every nested descendant, even when its row is not mounted, and exclude the parent and internal hidden threads. Each thread counts once: waiting takes precedence over failure, then working. Live background jobs keep an otherwise idle thread working. Hover a count for its label; counts fade when the row actions appear.
 
 BB itself marks only top-level threads unread. The plugin also tracks subthreads. A result is the last non-empty assistant message of a finished run. It counts as seen once the thread is open in a visible, focused window. BB's own read state is not changed.
 
@@ -54,6 +54,20 @@ The filter button in the sidebar footer narrows the whole list to one kind of th
 - **Managers** — the threads listed in the managers file.
 
 A match keeps its parents, so it stays in its place in the tree. The open thread always stays visible. Your sections and projects without a match hide while the filter is on, collapsed or not. BB's own Pinned and Threads headers stay, and so does a collapsed environment group with the list item around it: BB neither mounts its rows nor names them on screen, so expand it to filter inside. The filter changes no saved order, section or collapse state, and the button turns the accent color while a filter is on. The choice is kept per device. If the button is in **More footer actions**, use **Customize footer** to move it into view.
+
+## Compact warm theme
+
+Turn on **Compact warm theme** in the Responsibilities plugin settings. It is off by default and applies immediately. Turn it off to restore your selected BB theme; filters, attention marks and collapsed counts keep working.
+
+The optional theme adds warm light and dark palettes, 26 px rows with a mouse, and tighter nesting: 10 px per level, then 8 px deeper in the tree. Touch screens keep BB's larger row targets. The selected path gets a subtle background and branch guides; hovering a row also reveals its path. Titles use the available width, with row actions overlaying and fading the text on hover. Manager titles stay semibold with a softer color.
+
+![Compact warm theme in dark mode, with a nested thread selected](assets/compact-theme-dark.png)
+
+![The same compact tree in light mode](assets/compact-theme-light.png)
+
+*Synthetic example threads in BB 0.47.1 with Responsibilities 0.2.0. The selected path connects Release planning → Review the navigation → Check keyboard focus. Provider icons are BB's own; Model & Effort Badges is disabled.*
+
+The CSS ships with the plugin, so no BB installation files or separate user stylesheet need editing. It overrides the selected theme while enabled. Model and effort badges remain the responsibility of the separate [Model & Effort Badges](https://github.com/neoromantic/bb-plugin-model-effort-badges) plugin.
 
 ## Managers
 

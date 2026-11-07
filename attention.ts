@@ -14,7 +14,7 @@ export type Attention = {
 
 export type AttentionThread = Pick<
   PluginSidebarThread,
-  "id" | "parentThreadId" | "status" | "isUnread" | "lastReadAt" | "latestAttentionAt" | "indicator"
+  "id" | "parentThreadId" | "status" | "isUnread" | "lastReadAt" | "latestAttentionAt" | "indicator" | "activity" | "hasPendingInteraction" | "queuedWork"
 >;
 
 /** The row glyph of an unread thread that shows nothing else; styled as a dot. */
@@ -67,7 +67,13 @@ export function isUnread(thread: AttentionThread, attention: Attention | undefin
   return thread.parentThreadId === null && thread.isUnread && thread.status !== "error" && thread.latestAttentionAt !== attention?.quietAttentionAt;
 }
 
-export type RowAttention = { status: PluginComposerThreadRowStatus | null; failed: boolean; unread: boolean; quiet: boolean };
+const BUSY = new Set<string>(["starting", "active", "stopping"]);
+
+/** A turn runs or work it started is still alive; a thread blocked on the user is waiting, not working. */
+export const isWorking = (thread: Pick<AttentionThread, "status" | "hasPendingInteraction" | "activity">) =>
+  !thread.hasPendingInteraction && (BUSY.has(thread.status) || thread.activity.workflows + thread.activity.backgroundAgents + thread.activity.backgroundCommands > 0);
+
+export type RowAttention = { status: PluginComposerThreadRowStatus | null; failed: boolean; unread: boolean; quiet: boolean; summary: { working: number; waiting: number; failed: number } };
 
 /** Glyphs BB's collapsed parent takes over from its hidden descendants. */
 const COLLAPSED_ACTIVITY = new Set(["waiting-for-input", "working-draft", "workflow", "background-agent", "background-command", "plan-mode", "goal", "runtime"]);
@@ -90,5 +96,12 @@ export function rowAttention(
     !(thread.indicator === "none" || thread.indicator === "unread-success") ||
     group.some((member) => member !== thread && COLLAPSED_ACTIVITY.has(member.indicator));
   const status = failure ?? (unread && !bbGlyph ? UNREAD : null);
-  return { status, failed: failure !== null, unread, quiet: !unread && thread.indicator === "unread-success" };
+  const summary = { working: 0, waiting: 0, failed: 0 };
+  for (const member of group) {
+    if (member.id === thread.id) continue;
+    if (member.hasPendingInteraction) summary.waiting++;
+    else if (member.status === "error" || member.queuedWork === "failed") summary.failed++;
+    else if (isWorking(member)) summary.working++;
+  }
+  return { status, failed: failure !== null, unread, quiet: !unread && thread.indicator === "unread-success", summary };
 }

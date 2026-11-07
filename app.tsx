@@ -4,6 +4,7 @@ import {
   experimental_useRpcQuery as useRpcQuery,
   experimental_useSidebarThreads as useSidebarThreads,
   useBbContext,
+  useSettings,
   type ExperimentalSidebarFooterDisclosureProps,
   type PluginComposerThreadRowStatus,
   type PluginContentScriptContext,
@@ -13,6 +14,7 @@ import { rowAttention, type Attention } from "./attention";
 import { CHILD_CSS, ChildComposer, childThreadAction } from "./child";
 import { contract } from "./contract";
 import { FILTERS, groupsWith, visibleThreads, type Filter } from "./filter";
+import { COMPACT_THEME } from "./theme";
 import { useAttention, useSeenWhileShown } from "./use-attention";
 
 const ROW = "[data-sidebar-rename-row]";
@@ -56,6 +58,11 @@ const CSS = `
 [data-resp-failed] [data-sidebar-thread-trailing-indicator]:has(> [data-icon="Loading"], > [data-icon="CircleQuestion"])::before { content: ""; position: absolute; inset: 0; background: var(--destructive); mask: url("${CIRCLE_X}") center / contain no-repeat; }
 [data-resp-unread] [data-sidebar-thread-trailing-indicator]:has(> [data-icon-root]:not([data-icon="Circle"]))::after { content: ""; position: absolute; top: -1px; right: -1.5px; width: 6px; height: 6px; border-radius: 50%; background: var(--sidebar-foreground); box-shadow: 0 0 0 1.5px var(--sidebar); }
 [data-resp-hidden] { display: none !important; }
+[data-resp-summary] { display: inline-flex; flex-shrink: 0; gap: 5px; font-size: var(--text-xs); font-variant-numeric: tabular-nums; white-space: nowrap; }
+[data-resp-summary-kind="working"] { color: var(--muted-foreground); }
+[data-resp-summary-kind="waiting"] { color: var(--warning-text); }
+[data-resp-summary-kind="failed"] { color: var(--destructive-text); }
+[data-sidebar-rename-row]:has([data-sidebar-hover-actions-open="true"]) [data-resp-summary] { opacity: 0; }
 button[aria-label="${FILTER_LABEL}"][data-resp-filtered] { color: var(--primary); }
 [data-resp-filters] { display: flex; flex-direction: column; gap: 2px; padding: 4px; }
 [data-resp-filters] button { display: flex; padding: 4px 8px; border-radius: calc(var(--radius) - 4px); font-size: var(--text-sm); text-align: left; color: var(--sidebar-foreground); }
@@ -75,6 +82,7 @@ function titleText(row: HTMLElement): Text | null {
 }
 
 function Responsibilities() {
+  const { values } = useSettings();
   const { threads } = useSidebarThreads();
   const { attention } = useAttention();
   const { data: managerIds } = useRpcQuery({ contract, method: "managers", input: {} });
@@ -89,6 +97,7 @@ function Responsibilities() {
   useEffect(() => {
     let alive = true;
     let frame = 0;
+    let hoveredThreadId: string | null = null;
     // Row statuses this generation of the writer currently holds.
     const shown = new Map<string, PluginComposerThreadRowStatus>();
     onRowStatusWriter = () => {
@@ -96,19 +105,69 @@ function Responsibilities() {
       schedule.current();
     };
 
-    const syncRows = (threads: readonly PluginSidebarThread[], attention: ReadonlyMap<string, Attention>, managers: ReadonlySet<string>) => {
+    const syncRows = (threads: readonly PluginSidebarThread[], attention: ReadonlyMap<string, Attention>, managers: ReadonlySet<string>, openThreadId: string | null) => {
       const byId = new Map(threads.map((thread) => [thread.id, thread]));
       const children = Map.groupBy(threads.filter((thread) => !thread.isHidden), (thread) => thread.parentThreadId);
       const descendants = (id: string): PluginSidebarThread[] => (children.get(id) ?? []).flatMap((child) => [child, ...descendants(child.id)]);
       const statuses = new Map<string, PluginComposerThreadRowStatus | null>();
+      const pathIds = new Set<string>();
+      const guideIds = new Set<string>();
+      const guides = new Map<Element, string>();
+      for (const start of [openThreadId, hoveredThreadId]) {
+        let parentId = start;
+        while (parentId !== null) {
+          const parent = byId.get(parentId);
+          if (!parent) break;
+          if (start === openThreadId) pathIds.add(parent.id);
+          guideIds.add(parent.id);
+          parentId = parent.parentThreadId;
+        }
+      }
       // From the link up: a section's sticky group carries the row attribute too.
       for (const link of document.querySelectorAll<HTMLElement>("a[data-sidebar-thread-id]")) {
         const row = link.closest<HTMLElement>(ROW);
         const thread = byId.get(link.dataset.sidebarThreadId ?? "");
         if (!row || !thread) continue;
+        if (guideIds.has(thread.id)) {
+          const item = row.closest(ITEM);
+          if (item?.parentElement?.parentElement?.querySelector(":scope > .group\\/thread-row")) {
+            if (guides.get(item) === "through") guides.set(item, "both");
+            else if (!guides.has(item)) guides.set(item, "end");
+            for (let sibling = item.previousElementSibling; sibling; sibling = sibling.previousElementSibling) {
+              if (!sibling.matches(ITEM)) continue;
+              if (guides.get(sibling) === "end") guides.set(sibling, "both");
+              else if (!guides.has(sibling)) guides.set(sibling, "through");
+            }
+          }
+        }
         const collapsed = row.querySelector('button[data-sidebar-rename-anchor][aria-expanded="false"]') !== null;
         const state = rowAttention(thread, collapsed ? [thread, ...descendants(thread.id)] : [thread], attention);
         statuses.set(thread.id, state.status);
+        let summary = row.querySelector<HTMLElement>("[data-resp-summary]");
+        const counts = [["working", "↻", state.summary.working], ["waiting", "?", state.summary.waiting], ["failed", "×", state.summary.failed]] as const;
+        if (counts.every(([, , count]) => count === 0)) summary?.remove();
+        else {
+          if (!summary) {
+            summary = document.createElement("span");
+            summary.dataset.respSummary = "";
+            summary.className = "bb-sidebar-hover-actions-fade";
+            row.querySelector("[data-sidebar-thread-trailing]")!.prepend(summary);
+          }
+          const countsKey = JSON.stringify(state.summary);
+          if (summary.dataset.counts !== countsKey) {
+            summary.dataset.counts = countsKey;
+            summary.replaceChildren(...counts.filter(([, , count]) => count > 0).map(([kind, symbol, count]) => {
+              const badge = document.createElement("span");
+              badge.dataset.respSummaryKind = kind;
+              badge.textContent = `${symbol} ${count}`;
+              badge.title = `Collapsed descendants ${kind}: ${count}`;
+              badge.setAttribute("role", "img");
+              badge.setAttribute("aria-label", badge.title);
+              return badge;
+            }));
+          }
+        }
+        toggle(row, "data-resp-path", pathIds.has(thread.id));
         toggle(row, "data-resp-failed", state.failed);
         toggle(row, "data-resp-unread", state.unread);
         toggle(row, "data-resp-quiet", state.quiet);
@@ -123,6 +182,12 @@ function Responsibilities() {
           if (text && !text.data.startsWith(MARKER)) text.data = MARKER + text.data;
           row.removeAttribute("data-resp-marker");
         }
+      }
+      for (const item of document.querySelectorAll("[data-resp-guide]")) {
+        if (!guides.has(item)) item.removeAttribute("data-resp-guide");
+      }
+      for (const [item, kind] of guides) {
+        if (item.getAttribute("data-resp-guide") !== kind) item.setAttribute("data-resp-guide", kind);
       }
       if (!setRowStatus) return;
       for (const [id, status] of statuses) {
@@ -141,6 +206,13 @@ function Responsibilities() {
     // Hides whole list items, mounted or not, so BB's lazy list closes the gaps itself. A thread or group
     // item stays while any thread in it, mounted or not, is kept; the same rule holds in both states.
     const syncFilter = (visible: ReadonlySet<string> | null, threads: readonly PluginSidebarThread[]) => {
+      if (visible === null) {
+        for (const element of document.querySelectorAll("[data-resp-hidden], [data-resp-filtered]")) {
+          element.removeAttribute("data-resp-hidden");
+          element.removeAttribute("data-resp-filtered");
+        }
+        return;
+      }
       // A section or project container is never hidden whole: its threads may sit in a collapsed group that
       // neither mounts nor names them. Its section or project element is judged by data below instead.
       const byId = new Map(threads.map((thread) => [thread.id, thread]));
@@ -176,7 +248,7 @@ function Responsibilities() {
     const sync = () => {
       frame = 0;
       const { threads, attention, managers, current, openThreadId } = latest.current;
-      syncRows(threads, attention, managers);
+      syncRows(threads, attention, managers, openThreadId);
       const visible = visibleThreads(current, threads, attention, managers, openThreadId);
       syncFilter(visible, threads);
     };
@@ -190,13 +262,27 @@ function Responsibilities() {
       if (records.some((record) => touchesSidebar(record.target) || [...record.addedNodes].some(touchesSidebar))) schedule.current();
     });
     observer.observe(document.body, { subtree: true, childList: true });
+    const hover = (event: PointerEvent) => {
+      if (event.type === "pointerout" && event.relatedTarget !== null) return;
+      const link = (event.target as Element).closest(ROW)?.querySelector<HTMLElement>("a[data-sidebar-thread-id]");
+      let next: string | null = null;
+      if (event.pointerType !== "touch" && event.type === "pointerover" && link) next = link.dataset.sidebarThreadId!;
+      if (next === hoveredThreadId) return;
+      hoveredThreadId = next;
+      schedule.current();
+    };
+    document.addEventListener("pointerover", hover);
+    document.addEventListener("pointerout", hover);
     schedule.current();
 
     return () => {
       alive = false;
       observer.disconnect();
+      document.removeEventListener("pointerover", hover);
+      document.removeEventListener("pointerout", hover);
       cancelAnimationFrame(frame);
-      const names = ["data-resp-failed", "data-resp-unread", "data-resp-quiet", "data-resp-manager", "data-resp-marker", "data-resp-hidden", "data-resp-filtered"];
+      for (const summary of document.querySelectorAll("[data-resp-summary]")) summary.remove();
+      const names = ["data-resp-guide", "data-resp-path", "data-resp-failed", "data-resp-unread", "data-resp-quiet", "data-resp-manager", "data-resp-marker", "data-resp-hidden", "data-resp-filtered"];
       for (const row of document.querySelectorAll<HTMLElement>(names.map((name) => `[${name}]`).join(", "))) {
         const text = row.hasAttribute("data-resp-marker") ? titleText(row) : null;
         if (text && !text.data.startsWith(MARKER)) text.data = MARKER + text.data;
@@ -209,7 +295,10 @@ function Responsibilities() {
 
   useEffect(() => schedule.current(), [threads, attention, managerIds, current, openThreadId]);
 
-  return <style>{CSS + CHILD_CSS}</style>;
+  return <>
+    <style>{CSS + CHILD_CSS}</style>
+    {values?.compactTheme === true && <style>{COMPACT_THEME}</style>}
+  </>;
 }
 
 function FilterMenu({ dismiss }: ExperimentalSidebarFooterDisclosureProps) {

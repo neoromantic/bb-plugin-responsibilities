@@ -17,6 +17,12 @@ const managersFile = z.object({ managers: z.array(z.object({ threadId: z.string(
 
 export default function plugin(bb: BbPluginApi) {
   const settings = bb.settings.define({
+    compactTheme: {
+      type: "boolean",
+      label: "Compact warm theme",
+      description: "Warm colors, compact thread rows, branch guides and more room for titles. Turn off to restore your BB theme.",
+      default: false,
+    },
     managersFile: {
       type: "string",
       label: "Managers file",

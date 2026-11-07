@@ -1,7 +1,8 @@
 import { expect, test } from "bun:test";
-import { groupsWith, isWorking, needsYou, visibleThreads } from "./filter";
+import { isWorking } from "./attention";
+import { groupsWith, needsYou, visibleThreads } from "./filter";
 
-type Thread = Parameters<typeof isWorking>[0];
+type Thread = Parameters<typeof visibleThreads>[1][number];
 const idle = { workflows: 0, backgroundAgents: 0, backgroundCommands: 0, planMode: 0, goals: 0 };
 const thread = (id: string, parentThreadId: string | null, more: Partial<Thread> = {}): Thread => ({
   id,

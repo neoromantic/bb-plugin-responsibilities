@@ -1,5 +1,5 @@
 import type { PluginSidebarThread } from "@get-bb/plugin-sdk/app";
-import { isUnread, type Attention } from "./attention";
+import { isUnread, isWorking, type Attention } from "./attention";
 
 export type Filter = "all" | "working" | "needs" | "quiet" | "managers";
 
@@ -15,12 +15,6 @@ type Thread = Pick<
   PluginSidebarThread,
   "id" | "parentThreadId" | "sectionId" | "projectId" | "isHidden" | "status" | "activity" | "hasPendingInteraction" | "queuedWork" | "isUnread" | "lastReadAt" | "latestAttentionAt" | "indicator"
 >;
-
-const BUSY = new Set<string>(["starting", "active", "stopping"]);
-
-/** A turn runs or work it started is still alive; a thread blocked on the user is waiting, not working. */
-export const isWorking = (thread: Thread) =>
-  !thread.hasPendingInteraction && (BUSY.has(thread.status) || thread.activity.workflows + thread.activity.backgroundAgents + thread.activity.backgroundCommands > 0);
 
 /** The marks on a row: a question or approval, a failure, a failed queued message, or an unread result. */
 export const needsYou = (thread: Thread, attention: Attention | undefined) =>
