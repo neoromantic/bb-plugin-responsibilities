@@ -52,12 +52,15 @@ const child = (overrides: Partial<AttentionThread> = {}): AttentionThread => ({
   lastReadAt: 100,
   latestAttentionAt: 50,
   indicator: "none",
+  activity: { workflows: 0, backgroundAgents: 0, backgroundCommands: 0, planMode: 0, goals: 0 },
+  hasPendingInteraction: false,
+  queuedWork: "none",
   ...overrides,
 });
 const root = (overrides: Partial<AttentionThread> = {}) => child({ id: "root", parentThreadId: null, ...overrides });
 const records = (...rows: Partial<Attention>[]) =>
   new Map(rows.map((row) => [row.threadId ?? "child", { threadId: "child", resultAt: null, quietAttentionAt: null, seenAt: null, ...row }]));
-const state = (status: RowStatus, failed: boolean, unread: boolean, quiet = false) => ({ status, failed, unread, quiet });
+const state = (status: RowStatus, failed: boolean, unread: boolean, quiet = false, summary = { working: 0, waiting: 0, failed: 0 }) => ({ status, failed, unread, quiet, summary });
 type RowStatus = ReturnType<typeof rowAttention>["status"];
 
 test("a child's unseen result shows the dot; seeing or reading it clears the dot", () => {
@@ -93,7 +96,7 @@ test("busy, waiting and queued glyphs stay BB's; the dot goes over them", () => 
 test("REPRO: a collapsed parent's hidden failure is flagged even while BB shows its spinner or question", () => {
   for (const indicator of ["runtime", "waiting-for-input"] as const) {
     const parent = root({ indicator });
-    expect(rowAttention(parent, [parent, child({ status: "error" })], records())).toEqual(state(COLLAPSED_FAILED, true, false));
+    expect(rowAttention(parent, [parent, child({ status: "error" })], records())).toEqual(state(COLLAPSED_FAILED, true, false, false, { working: 0, waiting: 0, failed: 1 }));
   }
 });
 
@@ -108,6 +111,25 @@ test("a collapsed parent carries its hidden descendants' failure and unread resu
   const parent = root();
   const failed = child({ id: "a", status: "error" });
   const done = child({ id: "b" });
-  expect(rowAttention(parent, [parent, failed, done], records({ threadId: "b", resultAt: 200 }))).toEqual(state(COLLAPSED_FAILED, true, true));
+  expect(rowAttention(parent, [parent, failed, done], records({ threadId: "b", resultAt: 200 }))).toEqual(state(COLLAPSED_FAILED, true, true, false, { working: 0, waiting: 0, failed: 1 }));
   expect(rowAttention(parent, [parent, done], records({ threadId: "b", resultAt: 200 })).status).toBe(UNREAD);
+});
+
+
+test("collapsed summary counts descendants once, excluding the parent and quiet results", () => {
+  const parent = root({ status: "active" });
+  const running = child({ id: "running", status: "active" });
+  const waiting = child({ id: "waiting", parentThreadId: "running", status: "active", hasPendingInteraction: true });
+  const background = child({ id: "background", parentThreadId: "waiting", activity: { workflows: 1, backgroundAgents: 2, backgroundCommands: 1, planMode: 0, goals: 0 } });
+  const failed = child({ id: "failed", status: "error" });
+  const queued = child({ id: "queued", queuedWork: "failed" });
+  const done = child({ id: "done" });
+  expect(rowAttention(parent, [parent, running, waiting, background, failed, queued, done], records({ threadId: "done", resultAt: 200 })).summary).toEqual({ working: 2, waiting: 1, failed: 2 });
+  expect(rowAttention(parent, [parent], records()).summary).toEqual({ working: 0, waiting: 0, failed: 0 });
+});
+
+test("waiting and failed descendants do not also count as working through background activity", () => {
+  const activity = { workflows: 1, backgroundAgents: 1, backgroundCommands: 1, planMode: 0, goals: 0 };
+  const parent = root();
+  expect(rowAttention(parent, [parent, child({ id: "waiting", hasPendingInteraction: true, activity }), child({ id: "failed", status: "error", activity })], records()).summary).toEqual({ working: 0, waiting: 1, failed: 1 });
 });
