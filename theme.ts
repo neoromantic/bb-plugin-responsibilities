@@ -57,14 +57,18 @@ export const COMPACT_THEME = String.raw`
   }
 }
 
-[data-resp-guide] {
+/* Inherited variables stay off the hover-toggled attribute, or each toggle restyles the whole branch. */
+[data-sidebar-windowed-item] {
   --compact-guide-row-height: var(--bb-sidebar-row-height);
   --compact-guide-color: color-mix(in oklch, var(--primary) 45%, var(--sidebar));
-  position: relative;
 
   @media (width < 48rem) and (pointer: coarse) {
     --compact-guide-row-height: var(--bb-sidebar-row-height-coarse);
   }
+}
+
+[data-resp-guide] {
+  position: relative;
 
   &::after {
     content: "";
