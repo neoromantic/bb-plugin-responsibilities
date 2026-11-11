@@ -50,6 +50,7 @@ const CIRCLE_X = `data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://ww
 /** BB's Loading glyph. BB spins the <svg> itself, which Chromium animates on the main thread at every frame; drawn on the indicator, the same spin runs on the compositor. */
 const LOADING = `data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="1.5" stroke-linecap="round"><path d="M12 3V6M12 18V21M21 12L18 12M6 12L3 12M18.3635 5.63672L16.2422 7.75804M7.75804 16.2422L5.63672 18.3635M18.3635 18.3635L16.2422 16.2422M7.75804 7.75804L5.63672 5.63672"/></svg>')}`;
 
+// No rule here may continue past :has() to a wide subject such as "> *": Chromium then restyles the whole sidebar on every element added to a row.
 const CSS = `
 [data-resp-manager] .bb-thread-title { font-weight: 600; color: light-dark(oklch(from var(--sidebar-foreground) calc(l - .12) c h), oklch(from var(--sidebar-foreground) calc(l + .14) c h)); }
 [data-sidebar-thread-trailing-indicator] > [data-icon="CircleQuestion"] { color: var(--warning); }
@@ -60,9 +61,9 @@ const CSS = `
 [data-sidebar-thread-trailing-indicator] > [data-icon="Loading"] { visibility: hidden; animation: none; }
 [data-sidebar-thread-trailing-indicator]:has(> [data-icon="Loading"])::before { content: ""; position: absolute; inset: 0; background: color-mix(in oklab, var(--muted-foreground) 50%, transparent); mask: url("${LOADING}") center / contain no-repeat; animation: spin 1s linear infinite; }
 @media (prefers-reduced-motion: reduce) { [data-sidebar-thread-trailing-indicator]:has(> [data-icon="Loading"])::before { animation: none; } }
-[data-resp-failed] [data-sidebar-thread-trailing-indicator]:has(> [data-icon="Loading"], > [data-icon="CircleQuestion"]) > * { visibility: hidden; }
-[data-resp-failed] [data-sidebar-thread-trailing-indicator]:has(> [data-icon="Loading"], > [data-icon="CircleQuestion"])::before { content: ""; position: absolute; inset: 0; background: var(--destructive); mask: url("${CIRCLE_X}") center / contain no-repeat; animation: none; }
-[data-resp-unread] [data-sidebar-thread-trailing-indicator]:has(> [data-icon-root]:not([data-icon="Circle"]))::after { content: ""; position: absolute; top: -1px; right: -1.5px; width: 6px; height: 6px; border-radius: 50%; background: var(--sidebar-foreground); box-shadow: 0 0 0 1.5px var(--sidebar); }
+[data-resp-failed] [data-sidebar-thread-trailing-indicator]:has(> [data-icon="Loading"], > [data-icon="CircleQuestion"]) { visibility: hidden; }
+[data-resp-failed] [data-sidebar-thread-trailing-indicator]:has(> [data-icon="Loading"], > [data-icon="CircleQuestion"])::before { content: ""; position: absolute; inset: 0; background: var(--destructive); mask: url("${CIRCLE_X}") center / contain no-repeat; animation: none; visibility: visible; }
+[data-resp-unread] [data-sidebar-thread-trailing-indicator]:has(> [data-icon-root]:not([data-icon="Circle"]))::after { content: ""; position: absolute; top: -1px; right: -1.5px; width: 6px; height: 6px; border-radius: 50%; background: var(--sidebar-foreground); box-shadow: 0 0 0 1.5px var(--sidebar); visibility: visible; }
 [data-resp-hidden] { display: none !important; }
 [data-resp-summary] { display: inline-flex; flex-shrink: 0; gap: 5px; font-size: var(--text-xs); font-variant-numeric: tabular-nums; white-space: nowrap; }
 [data-resp-summary-kind="working"] { color: var(--muted-foreground); }
