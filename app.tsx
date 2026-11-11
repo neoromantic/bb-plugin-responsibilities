@@ -100,6 +100,9 @@ function Responsibilities() {
     let hoveredThreadId: string | null = null;
     // Row statuses this generation of the writer currently holds.
     const shown = new Map<string, PluginComposerThreadRowStatus>();
+    // Parents last seen collapsed. BB's lazy list unmounts rows as they scroll away, and a status has to
+    // outlive that: every status change re-renders each section at once.
+    const collapsedIds = new Set<string>();
     onRowStatusWriter = () => {
       shown.clear();
       schedule.current();
@@ -141,6 +144,8 @@ function Responsibilities() {
           }
         }
         const collapsed = row.querySelector('button[data-sidebar-rename-anchor][aria-expanded="false"]') !== null;
+        if (collapsed) collapsedIds.add(thread.id);
+        else collapsedIds.delete(thread.id);
         const state = rowAttention(thread, collapsed ? [thread, ...descendants(thread.id)] : [thread], attention);
         statuses.set(thread.id, state.status);
         let summary = row.querySelector<HTMLElement>("[data-resp-summary]");
@@ -190,6 +195,10 @@ function Responsibilities() {
         if (item.getAttribute("data-resp-guide") !== kind) item.setAttribute("data-resp-guide", kind);
       }
       if (!setRowStatus) return;
+      for (const thread of threads) {
+        if (thread.isHidden || statuses.has(thread.id)) continue;
+        statuses.set(thread.id, rowAttention(thread, collapsedIds.has(thread.id) ? [thread, ...descendants(thread.id)] : [thread], attention).status);
+      }
       for (const [id, status] of statuses) {
         if ((shown.get(id) ?? null) === status) continue;
         setRowStatus(id, status);
@@ -259,6 +268,7 @@ function Responsibilities() {
 
     const touchesSidebar = (node: Node) => node instanceof Element && (node.matches(`${ROW}, ${ITEM}`) || node.querySelector(`${ROW}, ${ITEM}`) !== null || node.closest(ROW) !== null);
     const observer = new MutationObserver((records) => {
+      if (frame) return;
       if (records.some((record) => touchesSidebar(record.target) || [...record.addedNodes].some(touchesSidebar))) schedule.current();
     });
     observer.observe(document.body, { subtree: true, childList: true });
