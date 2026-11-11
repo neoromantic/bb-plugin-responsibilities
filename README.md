@@ -12,10 +12,10 @@ Requires BB 0.47.1 / SDK 0.6.79 or later with its standard sidebar. The plugin u
 
 Open BB’s **Community Plugins → Responsibilities → Install**, or run `bb plugin install responsibilities`.
 
-For the published 0.2.1 release:
+For the published 0.2.2 release:
 
 ```sh
-bb plugin install git:https://github.com/neoromantic/bb-plugin-responsibilities.git@v0.2.1 --yes
+bb plugin install git:https://github.com/neoromantic/bb-plugin-responsibilities.git@v0.2.2 --yes
 ```
 
 For a tracking source, use `bb plugin update responsibilities --yes`. To change a pinned version or source, save the plugin settings, remove its registration, install the desired version, then restore those settings individually. Removal resets settings.
@@ -40,6 +40,8 @@ On the right of each thread row:
 - a dot — it holds a result you have not seen yet, alone or in the corner of BB's own glyph.
 
 A collapsed parent shows the failure and the dot of its hidden descendants. It also shows counts of descendants **↻ working**, **? waiting for your answer or approval**, and **× failed**, including failed queued messages. Zero counts stay hidden. Counts cover every nested descendant, even when its row is not mounted, and exclude the parent and internal hidden threads. Each thread counts once: waiting takes precedence over failure, then working. Live background jobs keep an otherwise idle thread working. Hover a count for its label; counts fade when the row actions appear.
+
+Marks follow the thread data, not the rows on screen: a thread keeps its mark while its row is scrolled out of view, and a collapsed section shows the mark of a failed or unread thread inside it.
 
 BB itself marks only top-level threads unread. The plugin also tracks subthreads. A result is the last non-empty assistant message of a finished run. It counts as seen once the thread is open in a visible, focused window. BB's own read state is not changed.
 
