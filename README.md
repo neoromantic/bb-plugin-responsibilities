@@ -12,10 +12,10 @@ Requires BB 0.47.1 / SDK 0.6.79 or later with its standard sidebar. The plugin u
 
 Open BB’s **Community Plugins → Responsibilities → Install**, or run `bb plugin install responsibilities`.
 
-For the published 0.2.1 release:
+For the published 0.2.2 release:
 
 ```sh
-bb plugin install git:https://github.com/neoromantic/bb-plugin-responsibilities.git@v0.2.1 --yes
+bb plugin install git:https://github.com/neoromantic/bb-plugin-responsibilities.git@v0.2.2 --yes
 ```
 
 For a tracking source, use `bb plugin update responsibilities --yes`. To change a pinned version or source, save the plugin settings, remove its registration, install the desired version, then restore those settings individually. Removal resets settings.
