@@ -42,7 +42,8 @@ export const COMPACT_THEME = String.raw`
   --compact-parent-depth: -1;
 }
 
-[data-sidebar-sticky-group]:has(> .group\/thread-row) {
+/* A thread's group; a section's group carries the row attribute. :has() here would restyle the whole list on every element added to a row. */
+[data-sidebar-sticky-group]:not([data-sidebar-rename-row]) {
   --compact-depth: calc(var(--compact-parent-depth) + 1);
   --compact-step: clamp(8px, calc(16px - var(--compact-depth) * 2px), 10px);
   --compact-indent: calc(var(--compact-parent-indent) + var(--compact-step));
@@ -120,7 +121,10 @@ export const COMPACT_THEME = String.raw`
   }
 
   @media (hover: hover) {
-    &:is(:hover, :has(:focus-visible), :has([data-sidebar-hover-actions-open="true"])) > span[style*="--bb-sidebar-hover-actions-inset"] {
+    &:hover > span[style*="--bb-sidebar-hover-actions-inset"],
+    & > span[style*="--bb-sidebar-hover-actions-inset"]:has(:focus-visible),
+    & > span[style*="--bb-sidebar-hover-actions-inset"]:has(~ * :focus-visible),
+    & > span[style*="--bb-sidebar-hover-actions-inset"]:has(~ * [data-sidebar-hover-actions-open="true"]) {
       mask-image: linear-gradient(to left, transparent var(--bb-sidebar-hover-actions-inset), black calc(var(--bb-sidebar-hover-actions-inset) + 8px));
     }
   }
