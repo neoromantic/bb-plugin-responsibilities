@@ -9,7 +9,13 @@ import {
   type NewThreadRequest,
   type PluginThreadActionRegistration,
 } from "@get-bb/plugin-sdk/app";
-import { childSpawnArgs, childThreadItem, currentChildTarget, openChildComposer, subscribeChildTarget } from "./child-thread";
+import {
+  childSpawnArgs,
+  childThreadItem,
+  currentChildTarget,
+  openChildComposer,
+  subscribeChildTarget,
+} from "./child-thread";
 
 export const childThreadAction: PluginThreadActionRegistration = {
   id: "newChildThread",
@@ -40,7 +46,6 @@ export function ChildComposer() {
   useEffect(() => {
     setError(null);
     if (!parent) return;
-    // The row menu returns focus to its trigger as it closes; focus the prompt after that.
     const timer = setTimeout(() => setFocus((n) => n + 1), 50);
     return () => clearTimeout(timer);
   }, [parent]);
@@ -56,13 +61,15 @@ export function ChildComposer() {
       navigate.toThread(thread.id);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : String(cause));
-      // A throw keeps the draft.
       throw cause;
     }
   };
 
   return (
-    <div data-resp-child="" onMouseDown={(event) => event.target === event.currentTarget && openChildComposer(null)}>
+    <div
+      data-resp-child=""
+      onMouseDown={(event) => event.target === event.currentTarget && openChildComposer(null)}
+    >
       <section role="dialog" aria-modal="true" aria-label="New child thread">
         <header>
           <Icon name="ChildThread" />
@@ -77,7 +84,9 @@ export function ChildComposer() {
         <NewThreadComposer
           key={parent.id}
           defaultProjectId={parent.projectId}
-          {...(environment ? { defaultEnvironment: { type: "reuse" as const, environmentId: environment.id } } : {})}
+          {...(environment
+            ? { defaultEnvironment: { type: "reuse" as const, environmentId: environment.id } }
+            : {})}
           defaultPermissionMode="full"
           draftKey={`child:${parent.id}`}
           layout="document"

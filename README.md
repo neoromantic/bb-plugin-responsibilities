@@ -4,7 +4,7 @@ Find the BB threads that need your attention, including subthreads. Responsibili
 
 ![Responsibilities in BB with synthetic example threads](assets/responsibilities.png)
 
-*Synthetic example data in BB 0.47.1 with Responsibilities and an optional manager configured. The working spinner is BB’s own.*
+_Synthetic example data in BB 0.47.1 with Responsibilities and an optional manager configured. The working spinner is BB’s own._
 
 ## Install
 
@@ -67,7 +67,7 @@ The optional theme adds warm light and dark palettes, 26 px rows with a mouse, a
 
 ![The same compact tree in light mode](assets/compact-theme-light.png)
 
-*Synthetic example threads in BB 0.47.1 with Responsibilities 0.2.0. The selected path connects Release planning → Review the navigation → Check keyboard focus. Provider icons are BB's own; Model & Effort Badges is disabled.*
+_Synthetic example threads in BB 0.47.1 with Responsibilities 0.2.0. The selected path connects Release planning → Review the navigation → Check keyboard focus. Provider icons are BB's own; Model & Effort Badges is disabled._
 
 The CSS ships with the plugin, so no BB installation files or separate user stylesheet need editing. It overrides the selected theme while enabled. Model and effort badges remain the responsibility of the separate [Model & Effort Badges](https://github.com/neoromantic/bb-plugin-model-effort-badges) plugin.
 
@@ -87,7 +87,7 @@ The thread actions get **New child thread**. It opens BB's own composer and file
 
 ![New child thread composer with Full Access initially selected](assets/new-child.png)
 
-*Synthetic example in BB 0.47.1: the composer opened by **New child thread**, before sending. Check the permission mode before submitting.*
+_Synthetic example in BB 0.47.1: the composer opened by **New child thread**, before sending. Check the permission mode before submitting._
 
 ## Use with Subthread Columns
 
@@ -114,6 +114,8 @@ bun run check
 bun test
 bun run build
 ```
+
+`bun run check` runs the format check (oxfmt), the linter (oxlint with the [landmines](https://github.com/interfere-inc/landmines) rules) and the type check. `bun run format` formats the repo. The landmines rules need Node 22.18 or later on `PATH`. `.oxfmtrc.jsonc` and `.oxlintrc.devkit.jsonc` are the shared [devkit](https://github.com/neoromantic/devkit) configs; this repo's lint exceptions go in `.oxlintrc.json`.
 
 Build output is generated in `dist/`; the npm allowlist includes runtime sources and prebuilt bundles, without source maps or tests. The same build on a clean frozen-lock install must produce identical bundle bytes.
 

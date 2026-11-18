@@ -1,11 +1,18 @@
-import type { NewThreadRequest, PluginThreadAction, PluginThreadActionTarget } from "@get-bb/plugin-sdk/app";
+import type {
+  NewThreadRequest,
+  PluginThreadAction,
+  PluginThreadActionTarget,
+} from "@get-bb/plugin-sdk/app";
 
 /**
  * New child thread: BB's root compose drops a parent from `toCompose`, and its
  * own "New thread in environment" shows only on compact screens, so the plugin
  * hosts BB's composer itself and spawns the thread under the row's thread.
  */
-export type ChildTarget = Pick<PluginThreadActionTarget, "id" | "projectId" | "sectionId" | "pinnedAt" | "environment">;
+export type ChildTarget = Pick<
+  PluginThreadActionTarget,
+  "id" | "projectId" | "sectionId" | "pinnedAt" | "environment"
+>;
 
 let target: ChildTarget | null = null;
 const listeners = new Set<() => void>();
@@ -24,9 +31,14 @@ export function subscribeChildTarget(listener: () => void) {
   };
 }
 
-export function childThreadItem(thread: PluginThreadActionTarget): PluginThreadAction | null {
+export function childThreadItem(thread: PluginThreadActionTarget) {
   if (thread.archivedAt !== null) return null;
-  return { label: "New child thread", icon: "ChildThread", run: () => openChildComposer(thread) };
+  const item: PluginThreadAction = {
+    label: "New child thread",
+    icon: "ChildThread",
+    run: () => openChildComposer(thread),
+  };
+  return item;
 }
 
 /** The spawn request: the composer's selections, filed under the parent like BB's own compose. */
@@ -36,7 +48,6 @@ export function childSpawnArgs(parent: ChildTarget, request: NewThreadRequest) {
     parentThreadId: parent.id,
     sectionId: parent.sectionId,
     pinned: parent.pinnedAt !== null,
-    // Created from BB's own composer by the user, so it is filed as the app's thread, not the plugin's.
     origin: "app" as const,
   };
 }
