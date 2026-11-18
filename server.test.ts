@@ -9,7 +9,6 @@ import plugin from "./server";
 type Page = object[];
 type Rpc = Record<string, (input: never) => unknown>;
 
-/** The real server entry against an in-memory database and a scripted events API; no module mocks. */
 function load(
   list: (args: { beforeSeq?: string }) => Promise<Page>,
   { dataDir = "/nonexistent", threads = [] as object[] } = {},
@@ -129,7 +128,6 @@ const manager = (seq: number, text: string) => ({
   createdAt: seq,
   data: { text },
 });
-/** Answers only the event types the server asks for, like the real endpoint. */
 const filtered = (page: { type: string }[]) => async (args: object) =>
   page.filter((event) => (args as { types: string[] }).types.includes(event.type));
 

@@ -109,7 +109,6 @@ test("a legacy manager message with text is a result in any scope; an empty one 
   expect(result(manager(null, 9, ""))).toBeNull();
 });
 
-/** A badges-shaped source database holding `rows`; the connection stays open when `keep` (WAL not checkpointed). */
 function source(rows: (number | null)[][], keep = false) {
   const dir = join(mkdtempSync(join(tmpdir(), "resp-test-")), "plugins", "model-effort-badges");
   mkdirSync(dir, { recursive: true });
@@ -184,7 +183,6 @@ test("REPRO: a scanned version never skips the import, so a round trip keeps rec
   const writer = new Database(file);
   writer.prepare("UPDATE attention SET seen_at = 120 WHERE thread_id = 't1'").run();
   writer.close();
-  // The file changed, yet its version matches the scan marker, as a restored file with an old time would.
   const parts = [file, `${file}-wal`].filter((part) => existsSync(part));
   markScanned(db as never, file, Math.max(...parts.map((part) => statSync(part).mtimeMs)));
   expect(importAttention(db as never, file, quiet)).toBeNull();
@@ -230,7 +228,6 @@ test("REPRO: a thread that the shifting list skipped is read when the list is ta
   let lists = 0;
   const sdk = {
     threads: {
-      // The first listing misses t2, as an archive between offset pages would; the next one has it.
       list: async ({ archived }: { archived: boolean }) =>
         archived ? [] : ++lists === 1 ? [{ id: "t1" }] : [{ id: "t1" }, { id: "t2" }],
       events: {

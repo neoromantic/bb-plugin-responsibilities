@@ -58,7 +58,6 @@ export function visibleThreads(
           ? !isWorking(thread) && !needsYou(thread, attention.get(thread.id))
           : managers.has(thread.id);
   const visible = new Set<string>();
-  // A kept thread's ancestors are kept with it, so the walk stops at the first one already kept.
   const keep = (id: string | null) => {
     for (
       let thread = id === null ? undefined : byId.get(id);

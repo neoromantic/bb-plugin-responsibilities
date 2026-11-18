@@ -74,7 +74,6 @@ test("a steer joins the running turn, so output before it still counts", () => {
 });
 
 test("REPRO: a later run's request and output never stand in for the run that ended", () => {
-  // Run 2 started before the idle listener read: its request and reply are newer than the transition.
   const page = events(
     item(120, "agentMessage", "Run 2"),
     request(110),

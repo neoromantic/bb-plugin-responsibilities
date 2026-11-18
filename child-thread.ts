@@ -43,7 +43,6 @@ export function childSpawnArgs(parent: ChildTarget, request: NewThreadRequest) {
     parentThreadId: parent.id,
     sectionId: parent.sectionId,
     pinned: parent.pinnedAt !== null,
-    // Created from BB's own composer by the user, so it is filed as the app's thread, not the plugin's.
     origin: "app" as const,
   };
 }

@@ -18,18 +18,14 @@ import { COMPACT_THEME } from "./theme";
 import { useAttention, useSeenWhileShown } from "./use-attention";
 
 const ROW = "[data-sidebar-rename-row]";
-/** BB's lazy list wraps each item, mounted or not; an unmounted one names its threads in `data-sidebar-windowed-nav`. */
 const ITEM = "[data-sidebar-windowed-item]";
-/** Manager titles may carry this marker; the row hides it. */
 const MARKER = "○ ";
 const FILTER_LABEL = "Filter threads";
 const FILTER_KEY = "responsibilities:filter";
 
-/** Set by the content script, which is the only holder of BB's row-status writer. */
 let setRowStatus: PluginContentScriptContext["experimental_setThreadRowStatus"];
 let onRowStatusWriter = () => {};
 
-// One filter for the whole list, kept per device.
 let filter = (localStorage.getItem(FILTER_KEY) ?? "all") as Filter;
 const filterListeners = new Set<() => void>();
 function setFilter(next: Filter) {
@@ -44,13 +40,11 @@ function subscribeFilter(listener: () => void) {
   };
 }
 
-/** BB's CircleX glyph, for the failure BB will not draw over its spinner or question. */
 const CIRCLE_X = `data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/></svg>')}`;
 
-/** BB's Loading glyph. BB spins the <svg> itself, which Chromium animates on the main thread at every frame; drawn on the indicator, the same spin runs on the compositor. */
 const LOADING = `data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="1.5" stroke-linecap="round"><path d="M12 3V6M12 18V21M21 12L18 12M6 12L3 12M18.3635 5.63672L16.2422 7.75804M7.75804 16.2422L5.63672 18.3635M18.3635 18.3635L16.2422 16.2422M7.75804 7.75804L5.63672 5.63672"/></svg>')}`;
 
-// No rule here may continue past :has() to a wide subject such as "> *": Chromium then restyles the whole sidebar on every element added to a row.
+// WARNING: no rule here may continue past :has() to a wide subject such as "> *": Chromium then restyles the whole sidebar on every element added to a row.
 const CSS = `
 [data-resp-manager] .bb-thread-title { font-weight: 600; color: light-dark(oklch(from var(--sidebar-foreground) calc(l - .12) c h), oklch(from var(--sidebar-foreground) calc(l + .14) c h)); }
 [data-sidebar-thread-trailing-indicator] > [data-icon="CircleQuestion"] { color: var(--warning); }
@@ -81,7 +75,6 @@ function toggle(element: HTMLElement, name: string, on: boolean) {
   if (on !== element.hasAttribute(name)) element.toggleAttribute(name, on);
 }
 
-/** The title's first text node, where the manager marker sits. */
 function titleText(row: HTMLElement): Text | null {
   const title = row.querySelector(".bb-thread-title");
   const text = title && document.createTreeWalker(title, NodeFilter.SHOW_TEXT).nextNode();
@@ -105,10 +98,7 @@ function Responsibilities() {
     let alive = true;
     let frame = 0;
     let hoveredThreadId: string | null = null;
-    // Row statuses this generation of the writer currently holds.
     const shown = new Map<string, PluginComposerThreadRowStatus>();
-    // Parents last seen collapsed. BB's lazy list unmounts rows as they scroll away, and a status has to
-    // outlive that: every status change re-renders each section at once.
     const collapsedIds = new Set<string>();
     onRowStatusWriter = () => {
       shown.clear();
@@ -142,7 +132,6 @@ function Responsibilities() {
           parentId = parent.parentThreadId;
         }
       }
-      // From the link up: a section's sticky group carries the row attribute too.
       for (const link of document.querySelectorAll<HTMLElement>("a[data-sidebar-thread-id]")) {
         const row = link.closest<HTMLElement>(ROW);
         const thread = byId.get(link.dataset.sidebarThreadId ?? "");
@@ -211,7 +200,6 @@ function Responsibilities() {
         toggle(row, "data-resp-quiet", state.quiet);
         const manager = managers.has(thread.id);
         toggle(row, "data-resp-manager", manager);
-        // Cut from the visible text only; the stored title, tooltip and link label keep it.
         const text = titleText(row);
         if (manager && text?.data.startsWith(MARKER)) {
           text.data = text.data.slice(MARKER.length);
@@ -253,8 +241,6 @@ function Responsibilities() {
       }
     };
 
-    // Hides whole list items, mounted or not, so BB's lazy list closes the gaps itself. A thread or group
-    // item stays while any thread in it, mounted or not, is kept; the same rule holds in both states.
     const syncFilter = (
       visible: ReadonlySet<string> | null,
       threads: readonly PluginSidebarThread[],
@@ -268,8 +254,6 @@ function Responsibilities() {
         }
         return;
       }
-      // A section or project container is never hidden whole: its threads may sit in a collapsed group that
-      // neither mounts nor names them. Its section or project element is judged by data below instead.
       const byId = new Map(threads.map((thread) => [thread.id, thread]));
       for (const item of document.querySelectorAll<HTMLElement>(ITEM)) {
         const held = [...item.querySelectorAll<HTMLElement>("a[data-sidebar-thread-id]")].map(
@@ -281,7 +265,6 @@ function Responsibilities() {
               (entry) => entry.split(":")[0],
             ),
           );
-        // Unmounted, a top-level item whose first thread is in a section is that section; nested items are threads or groups.
         const container =
           item.childElementCount > 0
             ? item.querySelector("[data-sidebar-section-id], [data-sidebar-project-id]") !== null
@@ -296,7 +279,6 @@ function Responsibilities() {
             !held.some((id) => id !== undefined && visible.has(id)),
         );
       }
-      // Pinned rows sit outside the lazy list.
       for (const link of document.querySelectorAll<HTMLElement>("a[data-sidebar-thread-id]")) {
         const row = link.closest(ITEM) ? null : link.closest<HTMLElement>(ROW);
         if (row)
@@ -306,8 +288,6 @@ function Responsibilities() {
             visible !== null && !visible.has(link.dataset.sidebarThreadId ?? ""),
           );
       }
-      // A collapsed section or project mounts no rows, so its threads are told by data. A collapsed
-      // environment group has neither rows nor an id on its header, so it stays.
       const sections = visible === null ? null : groupsWith(visible, threads, "sectionId");
       for (const section of document.querySelectorAll<HTMLElement>("[data-sidebar-section-id]")) {
         toggle(
@@ -396,7 +376,6 @@ function Responsibilities() {
         if (text && !text.data.startsWith(MARKER)) text.data = MARKER + text.data;
         for (const name of names) row.removeAttribute(name);
       }
-      // BB clears this generation's row statuses itself when the plugin deactivates.
       onRowStatusWriter = () => {};
     };
   }, []);

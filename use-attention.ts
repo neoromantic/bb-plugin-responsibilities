@@ -5,10 +5,8 @@ import { merge, type Attention } from "./attention";
 /** `loaded`: the first snapshot arrived. */
 export type AttentionState = { attention: ReadonlyMap<string, Attention>; loaded: boolean };
 
-// One map for every component of the app, so a second consumer adds no server read.
 let state: AttentionState = { attention: new Map(), loaded: false };
 const listeners = new Set<() => void>();
-/** A snapshot was requested on the current connection. */
 let listed = false;
 
 const same = (a: Attention | undefined, b: Attention) =>
@@ -17,7 +15,6 @@ const same = (a: Attention | undefined, b: Attention) =>
   a.quietAttentionAt === b.quietAttentionAt &&
   a.seenAt === b.seenAt;
 
-// Snapshots and signals merge field by field, so a late snapshot cannot undo newer data.
 function receive(rows: readonly Attention[], snapshot = false) {
   let next: Map<string, Attention> | null = null;
   for (const row of rows) {
@@ -59,7 +56,6 @@ export function useAttention(): AttentionState {
     );
   }, [rpc, connection]);
 
-  // Every consumer hears the signal; only the first changes the map.
   useRealtime("attention", (payload) => receive([payload as Attention]));
   return useSyncExternalStore(subscribe, () => state);
 }

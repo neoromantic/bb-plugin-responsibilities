@@ -46,7 +46,6 @@ export function ChildComposer() {
   useEffect(() => {
     setError(null);
     if (!parent) return;
-    // The row menu returns focus to its trigger as it closes; focus the prompt after that.
     const timer = setTimeout(() => setFocus((n) => n + 1), 50);
     return () => clearTimeout(timer);
   }, [parent]);
@@ -62,7 +61,6 @@ export function ChildComposer() {
       navigate.toThread(thread.id);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : String(cause));
-      // A throw keeps the draft.
       throw cause;
     }
   };

@@ -1,13 +1,11 @@
 import { expect, mock, test } from "bun:test";
 
-// The host supplies React; registration itself renders nothing.
 mock.module("react", () => ({
   useEffect() {},
   useRef() {},
   useState() {},
   useSyncExternalStore() {},
 }));
-// The app keeps its filter in localStorage, which bun has no instance of.
 globalThis.localStorage = { getItem: () => null, setItem() {} } as unknown as Storage;
 mock.module("react/jsx-runtime", () => ({ jsx() {}, jsxs() {}, Fragment: "Fragment" }));
 const { default: app } = (await import("./app")) as { default: { setup(builder: unknown): void } };

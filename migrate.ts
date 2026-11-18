@@ -16,7 +16,6 @@ type Event = Awaited<ReturnType<Sdk["threads"]["events"]["list"]>>[number];
 export const MIGRATION_TABLE =
   "CREATE TABLE migration (source TEXT PRIMARY KEY, scanned_version REAL)";
 
-// Every field only grows; NULL keeps meaning "never".
 const MERGE = ["result_at", "quiet_attention_at", "seen_at"]
   .map(
     (column) =>

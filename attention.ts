@@ -55,7 +55,6 @@ export function runResult(
 ): number | null | undefined {
   for (const event of newestFirst) {
     if (event.type === "client/turn/requested") {
-      // A run's own request always precedes the transition that ends it.
       if (event.createdAt < endedAt && event.data.target.kind !== "steer") return null;
     } else if (
       event.createdAt <= endedAt &&
@@ -124,7 +123,6 @@ export type RowAttention = {
   summary: { working: number; waiting: number; failed: number };
 };
 
-/** Glyphs BB's collapsed parent takes over from its hidden descendants. */
 const COLLAPSED_ACTIVITY = new Set([
   "waiting-for-input",
   "working-draft",
