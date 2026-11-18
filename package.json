@@ -35,11 +35,12 @@
   "type": "module",
   "scripts": {
     "build": "BB_CLI= bb plugin build",
-    "check": "bun run format:check && bun run lint && tsc --noEmit",
+    "check": "bun run format:check && bun run lint && tsc --noEmit && bun run check:knip",
     "format": "oxfmt",
     "format:check": "oxfmt --check",
     "lint": "oxlint --deny-warnings",
-    "test": "bun test"
+    "test": "bun test",
+    "check:knip": "knip"
   },
   "dependencies": {
     "zod": "4.6.7"
@@ -53,6 +54,7 @@
     "@types/react": "19.2.7",
     "bb-app": "0.47.1",
     "esbuild": "0.28.1",
+    "knip": "6.45.1",
     "oxfmt": "0.79.0",
     "oxlint": "1.94.0",
     "tailwindcss": "4.3.0",
