@@ -1,4 +1,6 @@
 {
   "$schema": "https://unpkg.com/knip@6/schema.json",
-  "include": ["files", "dependencies", "devDependencies", "unlisted", "unresolved"]
+  "include": ["files", "dependencies", "devDependencies", "unlisted", "unresolved"],
+  "entry": ["server.ts", "app.tsx"],
+  "ignoreDependencies": ["esbuild", "tailwindcss", "@tailwindcss/node", "@tailwindcss/oxide"]
 }
