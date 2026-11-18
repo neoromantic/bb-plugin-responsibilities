@@ -34,11 +34,7 @@ const version = (file: string) =>
  * a fresh install, or a source that never kept them (Model & Effort Badges 0.7
  * and later); `warn` says so, and the cutover check compares against a backup.
  */
-export function importAttention(
-  db: Db,
-  file: string,
-  warn: (message: string) => void,
-): number | null {
+export function importAttention(db: Db, file: string, warn: (message: string) => void) {
   if (!existsSync(file)) {
     warn(`no ${file}: nothing to take over`);
     return null;
@@ -75,7 +71,7 @@ export const markScanned = (db: Db, file: string, version: number) =>
  * interrupted contributes nothing, so an intermediate message is never a
  * result. A legacy manager message is complete text, so it counts as it is.
  */
-export function completedResult(events: readonly Event[]): number | null {
+export function completedResult(events: readonly Event[]) {
   const roots = new Set<string>();
   const last = new Map<string, number>();
   let result: number | null = null;

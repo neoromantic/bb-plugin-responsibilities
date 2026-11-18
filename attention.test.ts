@@ -92,7 +92,7 @@ test("REPRO: a page of tool completions without the run's request is unknown, no
 });
 
 test("REPRO: a late or overlapping snapshot cannot undo a newer result or seen mark", () => {
-  const row = (resultAt: number | null, seenAt: number | null): Attention => ({
+  const row = (resultAt: number | null, seenAt: number | null) => ({
     threadId: "child",
     resultAt,
     quietAttentionAt: null,
@@ -105,19 +105,20 @@ test("REPRO: a late or overlapping snapshot cannot undo a newer result or seen m
   expect(merge(merge(seen, row(20, null)), row(10, null))).toEqual(row(20, 20));
 });
 
-const child = (overrides: Partial<AttentionThread> = {}): AttentionThread => ({
-  id: "child",
-  parentThreadId: "root",
-  status: "idle",
-  isUnread: false,
-  lastReadAt: 100,
-  latestAttentionAt: 50,
-  indicator: "none",
-  activity: { workflows: 0, backgroundAgents: 0, backgroundCommands: 0, planMode: 0, goals: 0 },
-  hasPendingInteraction: false,
-  queuedWork: "none",
-  ...overrides,
-});
+const child = (overrides: Partial<AttentionThread> = {}) =>
+  ({
+    id: "child",
+    parentThreadId: "root",
+    status: "idle",
+    isUnread: false,
+    lastReadAt: 100,
+    latestAttentionAt: 50,
+    indicator: "none",
+    activity: { workflows: 0, backgroundAgents: 0, backgroundCommands: 0, planMode: 0, goals: 0 },
+    hasPendingInteraction: false,
+    queuedWork: "none",
+    ...overrides,
+  }) satisfies AttentionThread;
 const root = (overrides: Partial<AttentionThread> = {}) =>
   child({ id: "root", parentThreadId: null, ...overrides });
 const records = (...rows: Partial<Attention>[]) =>

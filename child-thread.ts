@@ -31,9 +31,14 @@ export function subscribeChildTarget(listener: () => void) {
   };
 }
 
-export function childThreadItem(thread: PluginThreadActionTarget): PluginThreadAction | null {
+export function childThreadItem(thread: PluginThreadActionTarget) {
   if (thread.archivedAt !== null) return null;
-  return { label: "New child thread", icon: "ChildThread", run: () => openChildComposer(thread) };
+  const item: PluginThreadAction = {
+    label: "New child thread",
+    icon: "ChildThread",
+    run: () => openChildComposer(thread),
+  };
+  return item;
 }
 
 /** The spawn request: the composer's selections, filed under the parent like BB's own compose. */

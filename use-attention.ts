@@ -37,7 +37,7 @@ function subscribe(listener: () => void) {
 }
 
 /** The plugin's attention records: loaded on connect and after a reconnect, which may have missed signals, then kept live. */
-export function useAttention(): AttentionState {
+export function useAttention() {
   const rpc = useRpc();
   const connection = useRealtimeConnectionState();
 

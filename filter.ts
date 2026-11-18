@@ -46,7 +46,7 @@ export function visibleThreads(
   attention: ReadonlyMap<string, Attention>,
   managers: ReadonlySet<string>,
   openThreadId: string | null,
-): Set<string> | null {
+) {
   if (filter === "all") return null;
   const byId = new Map(threads.map((thread) => [thread.id, thread]));
   const matches = (thread: Thread) =>

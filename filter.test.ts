@@ -4,22 +4,23 @@ import { groupsWith, needsYou, visibleThreads } from "./filter";
 
 type Thread = Parameters<typeof visibleThreads>[1][number];
 const idle = { workflows: 0, backgroundAgents: 0, backgroundCommands: 0, planMode: 0, goals: 0 };
-const thread = (id: string, parentThreadId: string | null, more: Partial<Thread> = {}): Thread => ({
-  id,
-  parentThreadId,
-  sectionId: "sec",
-  projectId: "proj",
-  isHidden: false,
-  status: "idle",
-  activity: idle,
-  hasPendingInteraction: false,
-  queuedWork: "none",
-  isUnread: false,
-  lastReadAt: 10,
-  latestAttentionAt: 5,
-  indicator: "none",
-  ...more,
-});
+const thread = (id: string, parentThreadId: string | null, more: Partial<Thread> = {}) =>
+  ({
+    id,
+    parentThreadId,
+    sectionId: "sec",
+    projectId: "proj",
+    isHidden: false,
+    status: "idle",
+    activity: idle,
+    hasPendingInteraction: false,
+    queuedWork: "none",
+    isUnread: false,
+    lastReadAt: 10,
+    latestAttentionAt: 5,
+    indicator: "none",
+    ...more,
+  }) satisfies Thread;
 
 test("working means a running turn or live work, never a thread waiting for the user", () => {
   expect(isWorking(thread("a", null, { status: "active" }))).toBe(true);

@@ -49,10 +49,7 @@ type Event = Awaited<ReturnType<PluginBbSdk["threads"]["events"]["list"]>>[numbe
  * transition belong to a later run; a steer joins the running turn, so the run
  * starts at its last request that is not one.
  */
-export function runResult(
-  newestFirst: readonly Event[],
-  endedAt: number,
-): number | null | undefined {
+export function runResult(newestFirst: readonly Event[], endedAt: number) {
   for (const event of newestFirst) {
     if (event.type === "client/turn/requested") {
       if (event.createdAt < endedAt && event.data.target.kind !== "steer") return null;
@@ -71,7 +68,7 @@ export function runResult(
 }
 
 /** Every field only grows on the server, so the larger value is always the newer one. */
-export function merge(known: Attention | undefined, next: Attention): Attention {
+export function merge(known: Attention | undefined, next: Attention) {
   const max = (a: number | null | undefined, b: number | null) =>
     a != null && (b === null || a > b) ? a : b;
   return {
@@ -79,7 +76,7 @@ export function merge(known: Attention | undefined, next: Attention): Attention 
     resultAt: max(known?.resultAt, next.resultAt),
     quietAttentionAt: max(known?.quietAttentionAt, next.quietAttentionAt),
     seenAt: max(known?.seenAt, next.seenAt),
-  };
+  } satisfies Attention;
 }
 
 /**
@@ -88,7 +85,7 @@ export function merge(known: Attention | undefined, next: Attention): Attention 
  * still counts, unless the plugin saw that its latest attention came from a
  * run without output.
  */
-export function isUnread(thread: AttentionThread, attention: Attention | undefined): boolean {
+export function isUnread(thread: AttentionThread, attention: Attention | undefined) {
   if (
     attention?.resultAt != null &&
     attention.resultAt > Math.max(thread.lastReadAt ?? 0, attention.seenAt ?? 0)
@@ -145,7 +142,7 @@ export function rowAttention(
   thread: AttentionThread,
   group: readonly AttentionThread[],
   attention: ReadonlyMap<string, Attention>,
-): RowAttention {
+) {
   const unread = group.some((member) => isUnread(member, attention.get(member.id)));
   const failure =
     thread.status === "error"
@@ -170,5 +167,5 @@ export function rowAttention(
     unread,
     quiet: !unread && thread.indicator === "unread-success",
     summary,
-  };
+  } satisfies RowAttention;
 }

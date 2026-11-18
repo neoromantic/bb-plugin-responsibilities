@@ -75,7 +75,7 @@ function toggle(element: HTMLElement, name: string, on: boolean) {
   if (on !== element.hasAttribute(name)) element.toggleAttribute(name, on);
 }
 
-function titleText(row: HTMLElement): Text | null {
+function titleText(row: HTMLElement) {
   const title = row.querySelector(".bb-thread-title");
   const text = title && document.createTreeWalker(title, NodeFilter.SHOW_TEXT).nextNode();
   return text instanceof Text ? text : null;
@@ -116,7 +116,7 @@ function Responsibilities() {
         threads.filter((thread) => !thread.isHidden),
         (thread) => thread.parentThreadId,
       );
-      const descendants = (id: string): PluginSidebarThread[] =>
+      const descendants: (id: string) => PluginSidebarThread[] = (id) =>
         (children.get(id) ?? []).flatMap((child) => [child, ...descendants(child.id)]);
       const statuses = new Map<string, PluginComposerThreadRowStatus | null>();
       const pathIds = new Set<string>();
