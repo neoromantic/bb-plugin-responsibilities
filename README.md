@@ -115,7 +115,7 @@ bun test
 bun run build
 ```
 
-`bun run check` runs the format check (oxfmt), the linter (oxlint with the [landmines](https://github.com/interfere-inc/landmines) rules) and the type check. `bun run format` formats the repo. The landmines rules need Node 22.18 or later on `PATH`. `.oxfmtrc.jsonc` and `.oxlintrc.devkit.jsonc` are the shared [devkit](https://github.com/neoromantic/devkit) configs; this repo's lint exceptions go in `.oxlintrc.json`.
+`bun run check` runs the format check (oxfmt), the linter (oxlint with the [landmines](https://github.com/interfere-inc/landmines) rules), the type check and [Knip](https://knip.dev) for unused files and dependencies. `bun run format` formats the repo. The landmines rules need Node 22.18 or later on `PATH`. `.oxfmtrc.jsonc` and `.oxlintrc.devkit.jsonc` are the shared [devkit](https://github.com/neoromantic/devkit) configs; this repo's lint exceptions go in `.oxlintrc.json`. CI runs the same check, build and tests on every pull request. See [AGENTS.md](AGENTS.md) for project notes and the release steps, and [CONTRIBUTING.md](CONTRIBUTING.md) for pull requests.
 
 Build output is generated in `dist/`; the npm allowlist includes runtime sources and prebuilt bundles, without source maps or tests. The same build on a clean frozen-lock install must produce identical bundle bytes.
 
