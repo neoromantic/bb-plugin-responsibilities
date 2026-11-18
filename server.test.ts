@@ -19,6 +19,7 @@ function load(
   const services: Record<string, (signal: AbortSignal) => Promise<void>> = {};
   const order: string[] = [];
   const invalidated: string[][] = [];
+  const logged = Promise.withResolvers<void>();
   plugin({
     settings: { define: () => ({ get: async () => ({ managersFile: "" }), onChange() {} }) },
     storage: {
@@ -36,7 +37,7 @@ function load(
       service: (name: string, service: { start: (signal: AbortSignal) => Promise<void> }) =>
         (services[name] = service.start),
     },
-    log: { info() {}, warn() {} },
+    log: { info: () => logged.resolve(), warn() {} },
     sdk: {
       threads: {
         list: async ({ archived }: { archived: boolean }) => (archived ? [] : threads),
@@ -50,7 +51,7 @@ function load(
         "SELECT result_at AS resultAt, quiet_attention_at AS quietAttentionAt, seen_at AS seenAt FROM attention",
       )
       .get();
-  return { idle, rpc, row, services, order, invalidated, db };
+  return { idle, rpc, row, services, order, invalidated, logged: logged.promise, db };
 }
 
 const thread = (updatedAt: number, parentThreadId: string | null = "root") => ({
@@ -194,7 +195,7 @@ test("REPRO: the takeover imports before the RPC exists, then scans completed tu
     scope: { kind: "turn", turnId: "a" },
     data,
   });
-  const { rpc, row, services, order, invalidated } = load(
+  const { rpc, row, services, order, invalidated, logged } = load(
     async () => [
       turn(1, "turn/started", 100, {}),
       turn(2, "item/completed", 120, { item: { type: "agentMessage", text: "Missed" } }),
@@ -208,7 +209,7 @@ test("REPRO: the takeover imports before the RPC exists, then scans completed tu
   ]);
   const abort = new AbortController();
   const scan = services["takeover-scan"]!(abort.signal);
-  await Bun.sleep(0);
+  await logged;
   expect(row()).toEqual({ resultAt: 120, quietAttentionAt: null, seenAt: 60 });
   expect(invalidated).toContainEqual(["attention"]);
   abort.abort();
