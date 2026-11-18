@@ -115,6 +115,8 @@ bun test
 bun run build
 ```
 
+`bun run check` runs the format check (oxfmt), the linter (oxlint with the [landmines](https://github.com/interfere-inc/landmines) rules) and the type check. `bun run format` formats the repo. The landmines rules need Node 22.18 or later on `PATH`. `.oxfmtrc.jsonc` and `.oxlintrc.devkit.jsonc` are the shared [devkit](https://github.com/neoromantic/devkit) configs; this repo's lint exceptions go in `.oxlintrc.json`.
+
 Build output is generated in `dist/`; the npm allowlist includes runtime sources and prebuilt bundles, without source maps or tests. The same build on a clean frozen-lock install must produce identical bundle bytes.
 
 See [demo provenance](assets/README.md). MIT licensed; see THIRD_PARTY_NOTICES for Zod attribution.
