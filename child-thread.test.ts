@@ -1,6 +1,11 @@
 import { expect, test } from "bun:test";
 import type { NewThreadRequest, PluginThreadActionTarget } from "@get-bb/plugin-sdk/app";
-import { childSpawnArgs, childThreadItem, currentChildTarget, openChildComposer } from "./child-thread";
+import {
+  childSpawnArgs,
+  childThreadItem,
+  currentChildTarget,
+  openChildComposer,
+} from "./child-thread";
 
 const thread: PluginThreadActionTarget = {
   id: "thr_parent",
@@ -36,6 +41,15 @@ test("every active thread offers a child, including children and threads without
 
 test("the child is spawned under the row's own thread, keeping every composer selection", () => {
   const args = childSpawnArgs(thread, request);
-  expect(args).toEqual({ ...request, parentThreadId: "thr_parent", sectionId: "sec_a", pinned: false, origin: "app" });
-  expect(childSpawnArgs({ ...thread, pinnedAt: 5, sectionId: null }, request)).toMatchObject({ sectionId: null, pinned: true });
+  expect(args).toEqual({
+    ...request,
+    parentThreadId: "thr_parent",
+    sectionId: "sec_a",
+    pinned: false,
+    origin: "app",
+  });
+  expect(childSpawnArgs({ ...thread, pinnedAt: 5, sectionId: null }, request)).toMatchObject({
+    sectionId: null,
+    pinned: true,
+  });
 });

@@ -13,12 +13,27 @@ export const FILTERS: readonly { id: Filter; label: string }[] = [
 
 type Thread = Pick<
   PluginSidebarThread,
-  "id" | "parentThreadId" | "sectionId" | "projectId" | "isHidden" | "status" | "activity" | "hasPendingInteraction" | "queuedWork" | "isUnread" | "lastReadAt" | "latestAttentionAt" | "indicator"
+  | "id"
+  | "parentThreadId"
+  | "sectionId"
+  | "projectId"
+  | "isHidden"
+  | "status"
+  | "activity"
+  | "hasPendingInteraction"
+  | "queuedWork"
+  | "isUnread"
+  | "lastReadAt"
+  | "latestAttentionAt"
+  | "indicator"
 >;
 
 /** The marks on a row: a question or approval, a failure, a failed queued message, or an unread result. */
 export const needsYou = (thread: Thread, attention: Attention | undefined) =>
-  thread.hasPendingInteraction || thread.status === "error" || thread.queuedWork === "failed" || isUnread(thread, attention);
+  thread.hasPendingInteraction ||
+  thread.status === "error" ||
+  thread.queuedWork === "failed" ||
+  isUnread(thread, attention);
 
 /**
  * The threads a filter keeps: every match with its ancestors up to the root,
@@ -45,7 +60,12 @@ export function visibleThreads(
   const visible = new Set<string>();
   // A kept thread's ancestors are kept with it, so the walk stops at the first one already kept.
   const keep = (id: string | null) => {
-    for (let thread = id === null ? undefined : byId.get(id); thread && !visible.has(thread.id); thread = thread.parentThreadId === null ? undefined : byId.get(thread.parentThreadId)) visible.add(thread.id);
+    for (
+      let thread = id === null ? undefined : byId.get(id);
+      thread && !visible.has(thread.id);
+      thread = thread.parentThreadId === null ? undefined : byId.get(thread.parentThreadId)
+    )
+      visible.add(thread.id);
   };
   for (const thread of threads) if (!thread.isHidden && matches(thread)) keep(thread.id);
   keep(openThreadId);
@@ -53,5 +73,13 @@ export function visibleThreads(
 }
 
 /** The sections or projects that still show a thread under the filter; collapsed ones have no rows to tell. */
-export const groupsWith = (visible: ReadonlySet<string>, threads: readonly Thread[], key: "sectionId" | "projectId") =>
-  new Set(threads.flatMap((thread) => (visible.has(thread.id) && thread[key] !== null ? [thread[key]] : [])));
+export const groupsWith = (
+  visible: ReadonlySet<string>,
+  threads: readonly Thread[],
+  key: "sectionId" | "projectId",
+) =>
+  new Set(
+    threads.flatMap((thread) =>
+      visible.has(thread.id) && thread[key] !== null ? [thread[key]] : [],
+    ),
+  );

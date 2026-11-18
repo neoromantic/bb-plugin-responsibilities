@@ -115,10 +115,19 @@ function Responsibilities() {
       schedule.current();
     };
 
-    const syncRows = (threads: readonly PluginSidebarThread[], attention: ReadonlyMap<string, Attention>, managers: ReadonlySet<string>, openThreadId: string | null) => {
+    const syncRows = (
+      threads: readonly PluginSidebarThread[],
+      attention: ReadonlyMap<string, Attention>,
+      managers: ReadonlySet<string>,
+      openThreadId: string | null,
+    ) => {
       const byId = new Map(threads.map((thread) => [thread.id, thread]));
-      const children = Map.groupBy(threads.filter((thread) => !thread.isHidden), (thread) => thread.parentThreadId);
-      const descendants = (id: string): PluginSidebarThread[] => (children.get(id) ?? []).flatMap((child) => [child, ...descendants(child.id)]);
+      const children = Map.groupBy(
+        threads.filter((thread) => !thread.isHidden),
+        (thread) => thread.parentThreadId,
+      );
+      const descendants = (id: string): PluginSidebarThread[] =>
+        (children.get(id) ?? []).flatMap((child) => [child, ...descendants(child.id)]);
       const statuses = new Map<string, PluginComposerThreadRowStatus | null>();
       const pathIds = new Set<string>();
       const guideIds = new Set<string>();
@@ -143,20 +152,33 @@ function Responsibilities() {
           if (item?.parentElement?.parentElement?.querySelector(":scope > .group\\/thread-row")) {
             if (guides.get(item) === "through") guides.set(item, "both");
             else if (!guides.has(item)) guides.set(item, "end");
-            for (let sibling = item.previousElementSibling; sibling; sibling = sibling.previousElementSibling) {
+            for (
+              let sibling = item.previousElementSibling;
+              sibling;
+              sibling = sibling.previousElementSibling
+            ) {
               if (!sibling.matches(ITEM)) continue;
               if (guides.get(sibling) === "end") guides.set(sibling, "both");
               else if (!guides.has(sibling)) guides.set(sibling, "through");
             }
           }
         }
-        const collapsed = row.querySelector('button[data-sidebar-rename-anchor][aria-expanded="false"]') !== null;
+        const collapsed =
+          row.querySelector('button[data-sidebar-rename-anchor][aria-expanded="false"]') !== null;
         if (collapsed) collapsedIds.add(thread.id);
         else collapsedIds.delete(thread.id);
-        const state = rowAttention(thread, collapsed ? [thread, ...descendants(thread.id)] : [thread], attention);
+        const state = rowAttention(
+          thread,
+          collapsed ? [thread, ...descendants(thread.id)] : [thread],
+          attention,
+        );
         statuses.set(thread.id, state.status);
         let summary = row.querySelector<HTMLElement>("[data-resp-summary]");
-        const counts = [["working", "↻", state.summary.working], ["waiting", "?", state.summary.waiting], ["failed", "×", state.summary.failed]] as const;
+        const counts = [
+          ["working", "↻", state.summary.working],
+          ["waiting", "?", state.summary.waiting],
+          ["failed", "×", state.summary.failed],
+        ] as const;
         if (counts.every(([, , count]) => count === 0)) summary?.remove();
         else {
           if (!summary) {
@@ -168,15 +190,19 @@ function Responsibilities() {
           const countsKey = JSON.stringify(state.summary);
           if (summary.dataset.counts !== countsKey) {
             summary.dataset.counts = countsKey;
-            summary.replaceChildren(...counts.filter(([, , count]) => count > 0).map(([kind, symbol, count]) => {
-              const badge = document.createElement("span");
-              badge.dataset.respSummaryKind = kind;
-              badge.textContent = `${symbol} ${count}`;
-              badge.title = `Collapsed descendants ${kind}: ${count}`;
-              badge.setAttribute("role", "img");
-              badge.setAttribute("aria-label", badge.title);
-              return badge;
-            }));
+            summary.replaceChildren(
+              ...counts
+                .filter(([, , count]) => count > 0)
+                .map(([kind, symbol, count]) => {
+                  const badge = document.createElement("span");
+                  badge.dataset.respSummaryKind = kind;
+                  badge.textContent = `${symbol} ${count}`;
+                  badge.title = `Collapsed descendants ${kind}: ${count}`;
+                  badge.setAttribute("role", "img");
+                  badge.setAttribute("aria-label", badge.title);
+                  return badge;
+                }),
+            );
           }
         }
         toggle(row, "data-resp-path", pathIds.has(thread.id));
@@ -199,12 +225,20 @@ function Responsibilities() {
         if (!guides.has(item)) item.removeAttribute("data-resp-guide");
       }
       for (const [item, kind] of guides) {
-        if (item.getAttribute("data-resp-guide") !== kind) item.setAttribute("data-resp-guide", kind);
+        if (item.getAttribute("data-resp-guide") !== kind)
+          item.setAttribute("data-resp-guide", kind);
       }
       if (!setRowStatus) return;
       for (const thread of threads) {
         if (thread.isHidden || statuses.has(thread.id)) continue;
-        statuses.set(thread.id, rowAttention(thread, collapsedIds.has(thread.id) ? [thread, ...descendants(thread.id)] : [thread], attention).status);
+        statuses.set(
+          thread.id,
+          rowAttention(
+            thread,
+            collapsedIds.has(thread.id) ? [thread, ...descendants(thread.id)] : [thread],
+            attention,
+          ).status,
+        );
       }
       for (const [id, status] of statuses) {
         if ((shown.get(id) ?? null) === status) continue;
@@ -221,9 +255,14 @@ function Responsibilities() {
 
     // Hides whole list items, mounted or not, so BB's lazy list closes the gaps itself. A thread or group
     // item stays while any thread in it, mounted or not, is kept; the same rule holds in both states.
-    const syncFilter = (visible: ReadonlySet<string> | null, threads: readonly PluginSidebarThread[]) => {
+    const syncFilter = (
+      visible: ReadonlySet<string> | null,
+      threads: readonly PluginSidebarThread[],
+    ) => {
       if (visible === null) {
-        for (const element of document.querySelectorAll("[data-resp-hidden], [data-resp-filtered]")) {
+        for (const element of document.querySelectorAll(
+          "[data-resp-hidden], [data-resp-filtered]",
+        )) {
           element.removeAttribute("data-resp-hidden");
           element.removeAttribute("data-resp-filtered");
         }
@@ -233,29 +272,57 @@ function Responsibilities() {
       // neither mounts nor names them. Its section or project element is judged by data below instead.
       const byId = new Map(threads.map((thread) => [thread.id, thread]));
       for (const item of document.querySelectorAll<HTMLElement>(ITEM)) {
-        const held = [...item.querySelectorAll<HTMLElement>("a[data-sidebar-thread-id]")].map((link) => link.dataset.sidebarThreadId);
-        for (const lazy of [item, ...item.querySelectorAll(ITEM)]) held.push(...(lazy.getAttribute("data-sidebar-windowed-nav")?.split(" ") ?? []).map((entry) => entry.split(":")[0]));
+        const held = [...item.querySelectorAll<HTMLElement>("a[data-sidebar-thread-id]")].map(
+          (link) => link.dataset.sidebarThreadId,
+        );
+        for (const lazy of [item, ...item.querySelectorAll(ITEM)])
+          held.push(
+            ...(lazy.getAttribute("data-sidebar-windowed-nav")?.split(" ") ?? []).map(
+              (entry) => entry.split(":")[0],
+            ),
+          );
         // Unmounted, a top-level item whose first thread is in a section is that section; nested items are threads or groups.
         const container =
           item.childElementCount > 0
             ? item.querySelector("[data-sidebar-section-id], [data-sidebar-project-id]") !== null
-            : item.parentElement?.closest(ITEM) === null && byId.get(held[0] ?? "")?.sectionId != null;
-        toggle(item, "data-resp-hidden", visible !== null && !container && held.length > 0 && !held.some((id) => id !== undefined && visible.has(id)));
+            : item.parentElement?.closest(ITEM) === null &&
+              byId.get(held[0] ?? "")?.sectionId != null;
+        toggle(
+          item,
+          "data-resp-hidden",
+          visible !== null &&
+            !container &&
+            held.length > 0 &&
+            !held.some((id) => id !== undefined && visible.has(id)),
+        );
       }
       // Pinned rows sit outside the lazy list.
       for (const link of document.querySelectorAll<HTMLElement>("a[data-sidebar-thread-id]")) {
         const row = link.closest(ITEM) ? null : link.closest<HTMLElement>(ROW);
-        if (row) toggle(row, "data-resp-hidden", visible !== null && !visible.has(link.dataset.sidebarThreadId ?? ""));
+        if (row)
+          toggle(
+            row,
+            "data-resp-hidden",
+            visible !== null && !visible.has(link.dataset.sidebarThreadId ?? ""),
+          );
       }
       // A collapsed section or project mounts no rows, so its threads are told by data. A collapsed
       // environment group has neither rows nor an id on its header, so it stays.
       const sections = visible === null ? null : groupsWith(visible, threads, "sectionId");
       for (const section of document.querySelectorAll<HTMLElement>("[data-sidebar-section-id]")) {
-        toggle(section, "data-resp-hidden", sections !== null && !sections.has(section.dataset.sidebarSectionId ?? ""));
+        toggle(
+          section,
+          "data-resp-hidden",
+          sections !== null && !sections.has(section.dataset.sidebarSectionId ?? ""),
+        );
       }
       const projects = visible === null ? null : groupsWith(visible, threads, "projectId");
       for (const project of document.querySelectorAll<HTMLElement>("[data-sidebar-project-id]")) {
-        toggle(project, "data-resp-hidden", projects !== null && !projects.has(project.dataset.sidebarProjectId ?? ""));
+        toggle(
+          project,
+          "data-resp-hidden",
+          projects !== null && !projects.has(project.dataset.sidebarProjectId ?? ""),
+        );
       }
       const button = document.querySelector<HTMLElement>(`button[aria-label="${FILTER_LABEL}"]`);
       if (button) toggle(button, "data-resp-filtered", visible !== null);
@@ -273,17 +340,29 @@ function Responsibilities() {
       if (alive && !frame) frame = requestAnimationFrame(sync);
     };
 
-    const touchesSidebar = (node: Node) => node instanceof Element && (node.matches(`${ROW}, ${ITEM}`) || node.querySelector(`${ROW}, ${ITEM}`) !== null || node.closest(ROW) !== null);
+    const touchesSidebar = (node: Node) =>
+      node instanceof Element &&
+      (node.matches(`${ROW}, ${ITEM}`) ||
+        node.querySelector(`${ROW}, ${ITEM}`) !== null ||
+        node.closest(ROW) !== null);
     const observer = new MutationObserver((records) => {
       if (frame) return;
-      if (records.some((record) => touchesSidebar(record.target) || [...record.addedNodes].some(touchesSidebar))) schedule.current();
+      if (
+        records.some(
+          (record) => touchesSidebar(record.target) || [...record.addedNodes].some(touchesSidebar),
+        )
+      )
+        schedule.current();
     });
     observer.observe(document.body, { subtree: true, childList: true });
     const hover = (event: PointerEvent) => {
       if (event.type === "pointerout" && event.relatedTarget !== null) return;
-      const link = (event.target as Element).closest(ROW)?.querySelector<HTMLElement>("a[data-sidebar-thread-id]");
+      const link = (event.target as Element)
+        .closest(ROW)
+        ?.querySelector<HTMLElement>("a[data-sidebar-thread-id]");
       let next: string | null = null;
-      if (event.pointerType !== "touch" && event.type === "pointerover" && link) next = link.dataset.sidebarThreadId!;
+      if (event.pointerType !== "touch" && event.type === "pointerover" && link)
+        next = link.dataset.sidebarThreadId!;
       if (next === hoveredThreadId) return;
       hoveredThreadId = next;
       schedule.current();
@@ -299,8 +378,20 @@ function Responsibilities() {
       document.removeEventListener("pointerout", hover);
       cancelAnimationFrame(frame);
       for (const summary of document.querySelectorAll("[data-resp-summary]")) summary.remove();
-      const names = ["data-resp-guide", "data-resp-path", "data-resp-failed", "data-resp-unread", "data-resp-quiet", "data-resp-manager", "data-resp-marker", "data-resp-hidden", "data-resp-filtered"];
-      for (const row of document.querySelectorAll<HTMLElement>(names.map((name) => `[${name}]`).join(", "))) {
+      const names = [
+        "data-resp-guide",
+        "data-resp-path",
+        "data-resp-failed",
+        "data-resp-unread",
+        "data-resp-quiet",
+        "data-resp-manager",
+        "data-resp-marker",
+        "data-resp-hidden",
+        "data-resp-filtered",
+      ];
+      for (const row of document.querySelectorAll<HTMLElement>(
+        names.map((name) => `[${name}]`).join(", "),
+      )) {
         const text = row.hasAttribute("data-resp-marker") ? titleText(row) : null;
         if (text && !text.data.startsWith(MARKER)) text.data = MARKER + text.data;
         for (const name of names) row.removeAttribute(name);
@@ -312,10 +403,12 @@ function Responsibilities() {
 
   useEffect(() => schedule.current(), [threads, attention, managerIds, current, openThreadId]);
 
-  return <>
-    <style>{CSS + CHILD_CSS}</style>
-    {values?.compactTheme === true && <style>{COMPACT_THEME}</style>}
-  </>;
+  return (
+    <>
+      <style>{CSS + CHILD_CSS}</style>
+      {values?.compactTheme === true && <style>{COMPACT_THEME}</style>}
+    </>
+  );
 }
 
 function FilterMenu({ dismiss }: ExperimentalSidebarFooterDisclosureProps) {
@@ -343,7 +436,13 @@ export default definePluginApp((app) => {
   app.slots.experimental_appOverlay({ id: "responsibilities", component: Responsibilities });
   app.slots.experimental_appOverlay({ id: "child-thread", component: ChildComposer });
   app.slots.experimental_threadAction(childThreadAction);
-  app.experimental_sidebarFooter.register({ kind: "disclosure", id: "filter", label: FILTER_LABEL, icon: "Filter", component: FilterMenu });
+  app.experimental_sidebarFooter.register({
+    kind: "disclosure",
+    id: "filter",
+    label: FILTER_LABEL,
+    icon: "Filter",
+    component: FilterMenu,
+  });
   app.contentScripts.register({
     id: "row-status",
     mount(context) {

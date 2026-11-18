@@ -9,7 +9,13 @@ import {
   type NewThreadRequest,
   type PluginThreadActionRegistration,
 } from "@get-bb/plugin-sdk/app";
-import { childSpawnArgs, childThreadItem, currentChildTarget, openChildComposer, subscribeChildTarget } from "./child-thread";
+import {
+  childSpawnArgs,
+  childThreadItem,
+  currentChildTarget,
+  openChildComposer,
+  subscribeChildTarget,
+} from "./child-thread";
 
 export const childThreadAction: PluginThreadActionRegistration = {
   id: "newChildThread",
@@ -62,7 +68,10 @@ export function ChildComposer() {
   };
 
   return (
-    <div data-resp-child="" onMouseDown={(event) => event.target === event.currentTarget && openChildComposer(null)}>
+    <div
+      data-resp-child=""
+      onMouseDown={(event) => event.target === event.currentTarget && openChildComposer(null)}
+    >
       <section role="dialog" aria-modal="true" aria-label="New child thread">
         <header>
           <Icon name="ChildThread" />
@@ -77,7 +86,9 @@ export function ChildComposer() {
         <NewThreadComposer
           key={parent.id}
           defaultProjectId={parent.projectId}
-          {...(environment ? { defaultEnvironment: { type: "reuse" as const, environmentId: environment.id } } : {})}
+          {...(environment
+            ? { defaultEnvironment: { type: "reuse" as const, environmentId: environment.id } }
+            : {})}
           defaultPermissionMode="full"
           draftKey={`child:${parent.id}`}
           layout="document"

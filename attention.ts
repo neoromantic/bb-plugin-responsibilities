@@ -14,13 +14,29 @@ export type Attention = {
 
 export type AttentionThread = Pick<
   PluginSidebarThread,
-  "id" | "parentThreadId" | "status" | "isUnread" | "lastReadAt" | "latestAttentionAt" | "indicator" | "activity" | "hasPendingInteraction" | "queuedWork"
+  | "id"
+  | "parentThreadId"
+  | "status"
+  | "isUnread"
+  | "lastReadAt"
+  | "latestAttentionAt"
+  | "indicator"
+  | "activity"
+  | "hasPendingInteraction"
+  | "queuedWork"
 >;
 
 /** The row glyph of an unread thread that shows nothing else; styled as a dot. */
 export const UNREAD: PluginComposerThreadRowStatus = { icon: "Circle", label: "Unread reply" };
-export const FAILED: PluginComposerThreadRowStatus = { icon: "CircleX", tone: "error", label: "Thread failed" };
-export const COLLAPSED_FAILED: PluginComposerThreadRowStatus = { ...FAILED, label: "A collapsed thread failed" };
+export const FAILED: PluginComposerThreadRowStatus = {
+  icon: "CircleX",
+  tone: "error",
+  label: "Thread failed",
+};
+export const COLLAPSED_FAILED: PluginComposerThreadRowStatus = {
+  ...FAILED,
+  label: "A collapsed thread failed",
+};
 
 type Event = Awaited<ReturnType<PluginBbSdk["threads"]["events"]["list"]>>[number];
 
@@ -33,12 +49,22 @@ type Event = Awaited<ReturnType<PluginBbSdk["threads"]["events"]["list"]>>[numbe
  * transition belong to a later run; a steer joins the running turn, so the run
  * starts at its last request that is not one.
  */
-export function runResult(newestFirst: readonly Event[], endedAt: number): number | null | undefined {
+export function runResult(
+  newestFirst: readonly Event[],
+  endedAt: number,
+): number | null | undefined {
   for (const event of newestFirst) {
     if (event.type === "client/turn/requested") {
       // A run's own request always precedes the transition that ends it.
       if (event.createdAt < endedAt && event.data.target.kind !== "steer") return null;
-    } else if (event.createdAt <= endedAt && (event.type === "system/manager/user_message" ? event.data.text : event.type === "item/completed" && event.data.item.type === "agentMessage" && event.data.item.text)) {
+    } else if (
+      event.createdAt <= endedAt &&
+      (event.type === "system/manager/user_message"
+        ? event.data.text
+        : event.type === "item/completed" &&
+          event.data.item.type === "agentMessage" &&
+          event.data.item.text)
+    ) {
       return event.createdAt;
     }
   }
@@ -47,7 +73,8 @@ export function runResult(newestFirst: readonly Event[], endedAt: number): numbe
 
 /** Every field only grows on the server, so the larger value is always the newer one. */
 export function merge(known: Attention | undefined, next: Attention): Attention {
-  const max = (a: number | null | undefined, b: number | null) => (a != null && (b === null || a > b) ? a : b);
+  const max = (a: number | null | undefined, b: number | null) =>
+    a != null && (b === null || a > b) ? a : b;
   return {
     threadId: next.threadId,
     resultAt: max(known?.resultAt, next.resultAt),
@@ -63,20 +90,51 @@ export function merge(known: Attention | undefined, next: Attention): Attention 
  * run without output.
  */
 export function isUnread(thread: AttentionThread, attention: Attention | undefined): boolean {
-  if (attention?.resultAt != null && attention.resultAt > Math.max(thread.lastReadAt ?? 0, attention.seenAt ?? 0)) return true;
-  return thread.parentThreadId === null && thread.isUnread && thread.status !== "error" && thread.latestAttentionAt !== attention?.quietAttentionAt;
+  if (
+    attention?.resultAt != null &&
+    attention.resultAt > Math.max(thread.lastReadAt ?? 0, attention.seenAt ?? 0)
+  )
+    return true;
+  return (
+    thread.parentThreadId === null &&
+    thread.isUnread &&
+    thread.status !== "error" &&
+    thread.latestAttentionAt !== attention?.quietAttentionAt
+  );
 }
 
 const BUSY = new Set<string>(["starting", "active", "stopping"]);
 
 /** A turn runs or work it started is still alive; a thread blocked on the user is waiting, not working. */
-export const isWorking = (thread: Pick<AttentionThread, "status" | "hasPendingInteraction" | "activity">) =>
-  !thread.hasPendingInteraction && (BUSY.has(thread.status) || thread.activity.workflows + thread.activity.backgroundAgents + thread.activity.backgroundCommands > 0);
+export const isWorking = (
+  thread: Pick<AttentionThread, "status" | "hasPendingInteraction" | "activity">,
+) =>
+  !thread.hasPendingInteraction &&
+  (BUSY.has(thread.status) ||
+    thread.activity.workflows +
+      thread.activity.backgroundAgents +
+      thread.activity.backgroundCommands >
+      0);
 
-export type RowAttention = { status: PluginComposerThreadRowStatus | null; failed: boolean; unread: boolean; quiet: boolean; summary: { working: number; waiting: number; failed: number } };
+export type RowAttention = {
+  status: PluginComposerThreadRowStatus | null;
+  failed: boolean;
+  unread: boolean;
+  quiet: boolean;
+  summary: { working: number; waiting: number; failed: number };
+};
 
 /** Glyphs BB's collapsed parent takes over from its hidden descendants. */
-const COLLAPSED_ACTIVITY = new Set(["waiting-for-input", "working-draft", "workflow", "background-agent", "background-command", "plan-mode", "goal", "runtime"]);
+const COLLAPSED_ACTIVITY = new Set([
+  "waiting-for-input",
+  "working-draft",
+  "workflow",
+  "background-agent",
+  "background-command",
+  "plan-mode",
+  "goal",
+  "runtime",
+]);
 
 /**
  * One row: the thread itself plus, for a collapsed parent, its hidden
@@ -91,7 +149,12 @@ export function rowAttention(
   attention: ReadonlyMap<string, Attention>,
 ): RowAttention {
   const unread = group.some((member) => isUnread(member, attention.get(member.id)));
-  const failure = thread.status === "error" ? FAILED : group.some((member) => member.status === "error") ? COLLAPSED_FAILED : null;
+  const failure =
+    thread.status === "error"
+      ? FAILED
+      : group.some((member) => member.status === "error")
+        ? COLLAPSED_FAILED
+        : null;
   const bbGlyph =
     !(thread.indicator === "none" || thread.indicator === "unread-success") ||
     group.some((member) => member !== thread && COLLAPSED_ACTIVITY.has(member.indicator));
@@ -103,5 +166,11 @@ export function rowAttention(
     else if (member.status === "error" || member.queuedWork === "failed") summary.failed++;
     else if (isWorking(member)) summary.working++;
   }
-  return { status, failed: failure !== null, unread, quiet: !unread && thread.indicator === "unread-success", summary };
+  return {
+    status,
+    failed: failure !== null,
+    unread,
+    quiet: !unread && thread.indicator === "unread-success",
+    summary,
+  };
 }

@@ -1,11 +1,18 @@
-import type { NewThreadRequest, PluginThreadAction, PluginThreadActionTarget } from "@get-bb/plugin-sdk/app";
+import type {
+  NewThreadRequest,
+  PluginThreadAction,
+  PluginThreadActionTarget,
+} from "@get-bb/plugin-sdk/app";
 
 /**
  * New child thread: BB's root compose drops a parent from `toCompose`, and its
  * own "New thread in environment" shows only on compact screens, so the plugin
  * hosts BB's composer itself and spawns the thread under the row's thread.
  */
-export type ChildTarget = Pick<PluginThreadActionTarget, "id" | "projectId" | "sectionId" | "pinnedAt" | "environment">;
+export type ChildTarget = Pick<
+  PluginThreadActionTarget,
+  "id" | "projectId" | "sectionId" | "pinnedAt" | "environment"
+>;
 
 let target: ChildTarget | null = null;
 const listeners = new Set<() => void>();

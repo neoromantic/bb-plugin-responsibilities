@@ -12,7 +12,10 @@ const listeners = new Set<() => void>();
 let listed = false;
 
 const same = (a: Attention | undefined, b: Attention) =>
-  a !== undefined && a.resultAt === b.resultAt && a.quietAttentionAt === b.quietAttentionAt && a.seenAt === b.seenAt;
+  a !== undefined &&
+  a.resultAt === b.resultAt &&
+  a.quietAttentionAt === b.quietAttentionAt &&
+  a.seenAt === b.seenAt;
 
 // Snapshots and signals merge field by field, so a late snapshot cannot undo newer data.
 function receive(rows: readonly Attention[], snapshot = false) {
@@ -62,7 +65,10 @@ export function useAttention(): AttentionState {
 }
 
 /** Seen: the thread is shown in a visible, focused window when its result arrives or later. */
-export function useSeenWhileShown(threadId: string | null, attention: ReadonlyMap<string, Attention>) {
+export function useSeenWhileShown(
+  threadId: string | null,
+  attention: ReadonlyMap<string, Attention>,
+) {
   const rpc = useRpc();
   useEffect(() => {
     const record = threadId ? attention.get(threadId) : undefined;

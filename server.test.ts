@@ -10,7 +10,10 @@ type Page = object[];
 type Rpc = Record<string, (input: never) => unknown>;
 
 /** The real server entry against an in-memory database and a scripted events API; no module mocks. */
-function load(list: (args: { beforeSeq?: string }) => Promise<Page>, { dataDir = "/nonexistent", threads = [] as object[] } = {}) {
+function load(
+  list: (args: { beforeSeq?: string }) => Promise<Page>,
+  { dataDir = "/nonexistent", threads = [] as object[] } = {},
+) {
   const db = new Database(":memory:");
   let idle!: (payload: { thread: object }) => Promise<void>;
   let rpc!: Rpc;
@@ -19,26 +22,69 @@ function load(list: (args: { beforeSeq?: string }) => Promise<Page>, { dataDir =
   const invalidated: string[][] = [];
   plugin({
     settings: { define: () => ({ get: async () => ({ managersFile: "" }), onChange() {} }) },
-    storage: { database: () => db, migrate: (_: unknown, statements: string[]) => statements.forEach((sql) => db.run(sql)) },
+    storage: {
+      database: () => db,
+      migrate: (_: unknown, statements: string[]) => statements.forEach((sql) => db.run(sql)),
+    },
     server: { experimental_dataDir: dataDir },
     realtime: { publish() {} },
-    rpc: { register: (_: unknown, handlers: Rpc) => (order.push("rpc"), (rpc = handlers)), experimental_invalidate: (tags: string[]) => invalidated.push(tags) },
+    rpc: {
+      register: (_: unknown, handlers: Rpc) => (order.push("rpc"), (rpc = handlers)),
+      experimental_invalidate: (tags: string[]) => invalidated.push(tags),
+    },
     events: { on: (_: string, handler: typeof idle) => (order.push("idle"), (idle = handler)) },
-    background: { service: (name: string, service: { start: (signal: AbortSignal) => Promise<void> }) => (services[name] = service.start) },
+    background: {
+      service: (name: string, service: { start: (signal: AbortSignal) => Promise<void> }) =>
+        (services[name] = service.start),
+    },
     log: { info() {}, warn() {} },
-    sdk: { threads: { list: async ({ archived }: { archived: boolean }) => (archived ? [] : threads), events: { list } } },
+    sdk: {
+      threads: {
+        list: async ({ archived }: { archived: boolean }) => (archived ? [] : threads),
+        events: { list },
+      },
+    },
   } as unknown as BbPluginApi);
-  const row = () => db.query("SELECT result_at AS resultAt, quiet_attention_at AS quietAttentionAt, seen_at AS seenAt FROM attention").get();
+  const row = () =>
+    db
+      .query(
+        "SELECT result_at AS resultAt, quiet_attention_at AS quietAttentionAt, seen_at AS seenAt FROM attention",
+      )
+      .get();
   return { idle, rpc, row, services, order, invalidated, db };
 }
 
-const thread = (updatedAt: number, parentThreadId: string | null = "root") => ({ id: "t", parentThreadId, updatedAt, latestAttentionAt: updatedAt });
-const request = (seq: number, createdAt: number) => ({ seq, type: "client/turn/requested", createdAt, data: { target: { kind: "follow-up" } } });
-const tool = (seq: number) => ({ seq, type: "item/completed", createdAt: seq, data: { item: { type: "commandExecution" } } });
-const reply = (seq: number, createdAt: number, text = "Done") => ({ seq, type: "item/completed", createdAt, data: { item: { type: "agentMessage", text } } });
+const thread = (updatedAt: number, parentThreadId: string | null = "root") => ({
+  id: "t",
+  parentThreadId,
+  updatedAt,
+  latestAttentionAt: updatedAt,
+});
+const request = (seq: number, createdAt: number) => ({
+  seq,
+  type: "client/turn/requested",
+  createdAt,
+  data: { target: { kind: "follow-up" } },
+});
+const tool = (seq: number) => ({
+  seq,
+  type: "item/completed",
+  createdAt: seq,
+  data: { item: { type: "commandExecution" } },
+});
+const reply = (seq: number, createdAt: number, text = "Done") => ({
+  seq,
+  type: "item/completed",
+  createdAt,
+  data: { item: { type: "agentMessage", text } },
+});
 
 test("REPRO: run 1's idle read sees run 2's request first and still records run 1's result", async () => {
-  const { idle, row } = load(async () => [request(4, 110), reply(3, 90, "Run 1 result"), request(1, 80)]);
+  const { idle, row } = load(async () => [
+    request(4, 110),
+    reply(3, 90, "Run 1 result"),
+    request(1, 80),
+  ]);
   await idle({ thread: thread(100) });
   expect(row()).toEqual({ resultAt: 90, quietAttentionAt: null, seenAt: null });
 });
@@ -63,7 +109,9 @@ test("REPRO: a full page without the run's request reads the next page instead o
     "201": [tool(200), reply(150, 150), request(100, 100)],
   };
   const asked: (string | undefined)[] = [];
-  const { idle, row } = load(async ({ beforeSeq }) => (asked.push(beforeSeq), pages[beforeSeq ?? ""]!));
+  const { idle, row } = load(
+    async ({ beforeSeq }) => (asked.push(beforeSeq), pages[beforeSeq ?? ""]!),
+  );
   await idle({ thread: thread(400, null) });
   expect(asked).toEqual([undefined, "201"]);
   expect(row()).toEqual({ resultAt: 150, quietAttentionAt: null, seenAt: null });
@@ -75,9 +123,15 @@ test("a root run proven quiet stores its attention so BB's dot for it can be hid
   expect(row()).toEqual({ resultAt: null, quietAttentionAt: 400, seenAt: null });
 });
 
-const manager = (seq: number, text: string) => ({ seq, type: "system/manager/user_message", createdAt: seq, data: { text } });
+const manager = (seq: number, text: string) => ({
+  seq,
+  type: "system/manager/user_message",
+  createdAt: seq,
+  data: { text },
+});
 /** Answers only the event types the server asks for, like the real endpoint. */
-const filtered = (page: { type: string }[]) => async (args: object) => page.filter((event) => (args as { types: string[] }).types.includes(event.type));
+const filtered = (page: { type: string }[]) => async (args: object) =>
+  page.filter((event) => (args as { types: string[] }).types.includes(event.type));
 
 test("REPRO: a run whose only output is a manager message is a result, on a root and on a child", async () => {
   for (const parent of [null, "root"]) {
@@ -93,7 +147,10 @@ test("an empty manager message is quiet only once the run's request is reached",
   expect(complete.row()).toEqual({ resultAt: null, quietAttentionAt: 100, seenAt: null });
 
   const asked: (string | undefined)[] = [];
-  const pages: Record<string, Page> = { "": [manager(300, ""), ...Array.from({ length: 99 }, (_, n) => tool(299 - n))], "201": [reply(150, 150), request(100, 100)] };
+  const pages: Record<string, Page> = {
+    "": [manager(300, ""), ...Array.from({ length: 99 }, (_, n) => tool(299 - n))],
+    "201": [reply(150, 150), request(100, 100)],
+  };
   const paged = load(async ({ beforeSeq }) => (asked.push(beforeSeq), pages[beforeSeq ?? ""]!));
   await paged.idle({ thread: thread(400, null) });
   expect(asked).toEqual([undefined, "201"]);
@@ -127,13 +184,30 @@ test("REPRO: the takeover imports before the RPC exists, then scans completed tu
   const root = mkdtempSync(join(tmpdir(), "resp-server-"));
   mkdirSync(join(root, "plugins", "model-effort-badges"), { recursive: true });
   const old = new Database(join(root, "plugins", "model-effort-badges", "data.db"));
-  old.run("CREATE TABLE attention (thread_id TEXT PRIMARY KEY, result_at INTEGER, quiet_attention_at INTEGER, seen_at INTEGER)");
+  old.run(
+    "CREATE TABLE attention (thread_id TEXT PRIMARY KEY, result_at INTEGER, quiet_attention_at INTEGER, seen_at INTEGER)",
+  );
   old.run("INSERT INTO attention VALUES ('t', 50, NULL, 60)");
   old.close();
-  const turn = (seq: number, type: string, createdAt: number, data: object) => ({ seq, type, createdAt, scope: { kind: "turn", turnId: "a" }, data });
-  const { rpc, row, services, order, invalidated } = load(async () => [turn(1, "turn/started", 100, {}), turn(2, "item/completed", 120, { item: { type: "agentMessage", text: "Missed" } }), turn(3, "turn/completed", 130, { status: "completed" })], { dataDir: root, threads: [{ id: "t" }] });
+  const turn = (seq: number, type: string, createdAt: number, data: object) => ({
+    seq,
+    type,
+    createdAt,
+    scope: { kind: "turn", turnId: "a" },
+    data,
+  });
+  const { rpc, row, services, order, invalidated } = load(
+    async () => [
+      turn(1, "turn/started", 100, {}),
+      turn(2, "item/completed", 120, { item: { type: "agentMessage", text: "Missed" } }),
+      turn(3, "turn/completed", 130, { status: "completed" }),
+    ],
+    { dataDir: root, threads: [{ id: "t" }] },
+  );
   expect(order).toEqual(["idle", "rpc"]);
-  expect(rpc.list!({} as never)).toEqual([{ threadId: "t", resultAt: 50, quietAttentionAt: null, seenAt: 60 }]);
+  expect(rpc.list!({} as never)).toEqual([
+    { threadId: "t", resultAt: 50, quietAttentionAt: null, seenAt: 60 },
+  ]);
   const abort = new AbortController();
   const scan = services["takeover-scan"]!(abort.signal);
   await Bun.sleep(0);
