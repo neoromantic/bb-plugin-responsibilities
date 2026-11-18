@@ -59,4 +59,49 @@ Use the project section's native commands for checks, offline tests and builds:
 
 ## Project
 
-Project-specific rules go here, below the devkit block.
+Responsibilities is a full-trust BB plugin (stable ID `responsibilities`). It marks the threads
+that need the user (failed, waiting for an answer, unread result), filters the sidebar, highlights
+manager threads from a JSON file, adds **New child thread** and an optional compact warm theme.
+
+### Layout
+
+- `package.json` `"bb"` declares the two entries: `server.ts` (attention and seen records in the
+  plugin's SQLite database, the managers file watch, the `list`/`seen` RPC from `contract.ts`,
+  the import from older attention data in `migrate.ts`) and `app.tsx` (overlays, the sidebar
+  footer filter, the row-status content script, New child thread from `child.tsx`, `theme.ts`).
+- Tests sit beside the code as `*.test.ts`. React comes from BB at runtime, so only
+  `@types/react` is listed; tests load the React that the SDK's dependencies install.
+- The plugin relies on experimental BB APIs and internal sidebar attributes; check them against
+  the pinned BB when it changes.
+
+### Commands
+
+Bun 1.4.3 and Node 24, as in the README; the landmines lint rules need Node 22.18 or later.
+
+- `bun install --frozen-lockfile`
+- `bun run check`: oxfmt check, oxlint with landmines, `tsc --noEmit`, Knip.
+- `bun run test`: `bun test`, offline.
+- `bun run build`: `bb plugin build` from the pinned `bb-app`, writes `dist/` (gitignored).
+- `bun run format`: oxfmt.
+
+### Gotchas
+
+- `esbuild`, `tailwindcss`, `@tailwindcss/node` and `@tailwindcss/oxide` are not imported, but
+  `bb plugin build` uses them from `node_modules` when their versions match the ones pinned in
+  `bb-app`. Otherwise it downloads its own copies and `app.css` changes. When `bb-app` moves,
+  set them to the versions the build lists while downloading. Knip's `ignoreDependencies`
+  names them for this reason.
+- The npm `files` allowlist ships `dist/` bundles; build before `bun pm pack`.
+
+### Commits and releases
+
+Commit subjects here are short imperative sentences, not Conventional Commits.
+
+1. On a `release/X.Y.Z` branch, commit `Release Responsibilities X.Y.Z`: `version` in
+   `package.json` and the pinned `@vX.Y.Z` install refs in `README.md` and `PLUGIN_OVERVIEW.md`.
+2. Open a pull request and merge it with a merge commit once `ci` passes.
+3. Maintainer only: tag the merge commit `vX.Y.Z` and publish the GitHub release
+   `Responsibilities X.Y.Z` with short notes and three assets: `bb-plugin-responsibilities-X.Y.Z.tgz`
+   (`bun pm pack` after a frozen-lockfile install and `bun run build`),
+   `bb-plugin-responsibilities-X.Y.Z-source.bundle` (`git bundle` of the release commit) and
+   `SHA256SUMS`.
