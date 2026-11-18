@@ -1,13 +1,5 @@
-import { expect, mock, test } from "bun:test";
+import { expect, test } from "bun:test";
 
-mock.module("react", () => ({
-  useEffect() {},
-  useRef() {},
-  useState() {},
-  useSyncExternalStore() {},
-}));
-globalThis.localStorage = { getItem: () => null, setItem() {} } as unknown as Storage;
-mock.module("react/jsx-runtime", () => ({ jsx() {}, jsxs() {}, Fragment: "Fragment" }));
 const { default: app } = (await import("./app")) as { default: { setup(builder: unknown): void } };
 
 test("marks, New child thread, the filter and the row-status writer register together", () => {

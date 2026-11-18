@@ -26,7 +26,8 @@ const FILTER_KEY = "responsibilities:filter";
 let setRowStatus: PluginContentScriptContext["experimental_setThreadRowStatus"];
 let onRowStatusWriter = () => {};
 
-let filter = (localStorage.getItem(FILTER_KEY) ?? "all") as Filter;
+let filter: Filter | undefined;
+const currentFilter = () => (filter ??= (localStorage.getItem(FILTER_KEY) ?? "all") as Filter);
 const filterListeners = new Set<() => void>();
 function setFilter(next: Filter) {
   filter = next;
@@ -87,7 +88,7 @@ function Responsibilities() {
   const { attention } = useAttention();
   const { data: managerIds } = useRpcQuery({ contract, method: "managers", input: {} });
   const { threadId: openThreadId } = useBbContext();
-  const current = useSyncExternalStore(subscribeFilter, () => filter);
+  const current = useSyncExternalStore(subscribeFilter, currentFilter);
   const managers = new Set(managerIds);
   const latest = useRef({ threads, attention, managers, current, openThreadId });
   latest.current = { threads, attention, managers, current, openThreadId };
@@ -391,7 +392,7 @@ function Responsibilities() {
 }
 
 function FilterMenu({ dismiss }: ExperimentalSidebarFooterDisclosureProps) {
-  const current = useSyncExternalStore(subscribeFilter, () => filter);
+  const current = useSyncExternalStore(subscribeFilter, currentFilter);
   return (
     <div data-resp-filters="" role="group" aria-label={FILTER_LABEL}>
       {FILTERS.map(({ id, label }) => (
